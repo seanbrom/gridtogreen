@@ -1,0 +1,138 @@
+import { fetchWithRetry } from "./fetch-utils";
+import type {
+  DriverStanding,
+  ConstructorStanding,
+  CircuitInfo,
+  HistoricalRaceResult,
+} from "@/types";
+
+const BASE_URL = "http://api.jolpi.ca/ergast/f1";
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseDriverStanding(raw: any): DriverStanding {
+  return {
+    position: parseInt(raw.position, 10),
+    points: parseFloat(raw.points),
+    wins: parseInt(raw.wins, 10),
+    driverId: raw.Driver.driverId,
+    code: raw.Driver.code ?? "",
+    givenName: raw.Driver.givenName,
+    familyName: raw.Driver.familyName,
+    constructorName: raw.Constructors?.[0]?.name ?? "Unknown",
+  };
+}
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+function parseConstructorStanding(raw: any): ConstructorStanding {
+  return {
+    position: parseInt(raw.position, 10),
+    points: parseFloat(raw.points),
+    wins: parseInt(raw.wins, 10),
+    constructorId: raw.Constructor.constructorId,
+    constructorName: raw.Constructor.name,
+  };
+}
+
+export async function fetchDriverStandings(
+  season: string = "current"
+): Promise<DriverStanding[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await fetchWithRetry<any>(
+    `${BASE_URL}/${season}/driverStandings.json`
+  );
+
+  const standings =
+    data?.MRData?.StandingsTable?.StandingsLists?.[0]?.DriverStandings;
+  if (!Array.isArray(standings)) return [];
+
+  return standings.map(parseDriverStanding);
+}
+
+export async function fetchConstructorStandings(
+  season: string = "current"
+): Promise<ConstructorStanding[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await fetchWithRetry<any>(
+    `${BASE_URL}/${season}/constructorStandings.json`
+  );
+
+  const standings =
+    data?.MRData?.StandingsTable?.StandingsLists?.[0]?.ConstructorStandings;
+  if (!Array.isArray(standings)) return [];
+
+  return standings.map(parseConstructorStanding);
+}
+
+export async function fetchCircuitInfo(
+  circuitId: string
+): Promise<CircuitInfo | null> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await fetchWithRetry<any>(
+    `${BASE_URL}/circuits/${circuitId}.json`
+  );
+
+  const circuit = data?.MRData?.CircuitTable?.Circuits?.[0];
+  if (!circuit) return null;
+
+  return {
+    circuitId: circuit.circuitId,
+    circuitName: circuit.circuitName,
+    lat: parseFloat(circuit.Location.lat),
+    lng: parseFloat(circuit.Location.long),
+    locality: circuit.Location.locality,
+    country: circuit.Location.country,
+  };
+}
+
+export async function fetchCircuitHistory(
+  circuitId: string,
+  years: number = 5
+): Promise<HistoricalRaceResult[]> {
+  const currentYear = new Date().getFullYear();
+  const results: HistoricalRaceResult[] = [];
+
+  // Fetch each year in parallel
+  const yearFetches = Array.from({ length: years }, (_, i) => {
+    const year = currentYear - 1 - i;
+    return fetchWithRetry<
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      any
+    >(`${BASE_URL}/${year}/circuits/${circuitId}/results.json`).catch(
+      () => null
+    );
+  });
+
+  const responses = await Promise.all(yearFetches);
+
+  for (const data of responses) {
+    if (!data) continue;
+    const races = data?.MRData?.RaceTable?.Races;
+    if (!Array.isArray(races)) continue;
+
+    for (const race of races) {
+      const season = parseInt(race.season, 10);
+      const round = parseInt(race.round, 10);
+      if (!Array.isArray(race.Results)) continue;
+
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      for (const result of race.Results) {
+        results.push({
+          season,
+          round,
+          raceName: race.raceName,
+          position: parseInt(result.position, 10),
+          grid: parseInt(result.grid, 10),
+          driverCode: result.Driver?.code ?? "",
+          driverName: `${result.Driver?.givenName ?? ""} ${result.Driver?.familyName ?? ""}`.trim(),
+          constructorName: result.Constructor?.name ?? "Unknown",
+          laps: parseInt(result.laps, 10),
+          status: result.status,
+          time: result.Time?.time ?? null,
+          fastestLapTime: result.FastestLap?.Time?.time ?? null,
+        });
+      }
+    }
+  }
+
+  return results.sort((a, b) => b.season - a.season || a.position - b.position);
+}
