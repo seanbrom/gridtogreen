@@ -12,7 +12,7 @@ const DATA_DIR = join(process.cwd(), ".data");
 const STORE_FILE = join(DATA_DIR, "kv.json");
 
 function useLocal(): boolean {
-  return !process.env.KV_REST_API_URL;
+  return !process.env.UPSTASH_REDIS_REST_URL;
 }
 
 function readStore(): Record<string, unknown> {
@@ -45,9 +45,16 @@ function localSet(key: string, value: unknown): void {
 }
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
+let redis: any = null;
 async function getKv(): Promise<any> {
-  const { kv } = await import("@vercel/kv");
-  return kv;
+  if (!redis) {
+    const { Redis } = await import("@upstash/redis");
+    redis = new Redis({
+      url: process.env.UPSTASH_REDIS_REST_URL!,
+      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+    });
+  }
+  return redis;
 }
 
 // ---------------------------------------------------------------------------
