@@ -4,47 +4,53 @@ import { getAllBriefings } from "@/lib/kv";
 import { ArchiveCard } from "@/components/ArchiveCard";
 
 export const metadata: Metadata = {
-  title: "Archive",
-  description: "All past Grid to Green race briefings.",
+  title: "Upcoming Races",
+  description: "Preview briefings for upcoming F1 races.",
 };
 
-async function getArchiveData() {
+async function getUpcomingData() {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours");
   cacheTag("briefing");
 
   const now = new Date();
   const all = await getAllBriefings();
-  // Show full briefings + past previews (race already happened but never got a full briefing)
-  return all.filter(
-    (b) => b.briefingType !== "preview" || new Date(b.raceDate) <= now
-  );
+  return all
+    .filter(
+      (b) =>
+        b.briefingType === "preview" && new Date(b.raceDate) > now
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.raceDate).getTime() - new Date(b.raceDate).getTime()
+    );
 }
 
-export default async function ArchivePage() {
-  const briefings = await getArchiveData();
+export default async function UpcomingPage() {
+  const briefings = await getUpcomingData();
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-12">
       <div className="mb-8">
         <h1 className="font-heading text-4xl tracking-wide text-foreground md:text-5xl">
-          RACE BRIEFINGS
+          UPCOMING RACES
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Every AI-generated race preview, from the latest to the first.
+          Early previews for every race on the calendar. Updated with
+          qualifying data and weather after Saturday&apos;s session.
         </p>
       </div>
 
       {briefings.length === 0 ? (
         <div className="rounded-lg border border-border/60 bg-card p-12 text-center">
           <p className="text-muted-foreground">
-            No briefings generated yet. Check back on race weekend.
+            No upcoming race previews yet. Check back soon.
           </p>
         </div>
       ) : (
         <div className="grid grid-cols-1 gap-6 md:grid-cols-2">
           {briefings.map((meta) => (
-            <ArchiveCard key={meta.slug} meta={meta} />
+            <ArchiveCard key={meta.slug} meta={meta} showPreviewBadge />
           ))}
         </div>
       )}

@@ -309,6 +309,7 @@ export interface Briefing {
   qualifying: BriefingContext["qualifying"];
   weather: BriefingContext["weather"] | null;
   polymarketSlug?: string;
+  briefingType?: "preview" | "full";
 }
 
 export interface BriefingMeta {
@@ -323,4 +324,5 @@ export interface BriefingMeta {
     value: string;
     label: string;
   };
+  briefingType?: "preview" | "full";
 }

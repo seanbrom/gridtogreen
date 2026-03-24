@@ -41,6 +41,82 @@ Return your response as a JSON object with this exact structure:
 
 Always return valid JSON only. No markdown, no preamble, no explanation outside the JSON structure.`;
 
+const PREVIEW_SYSTEM_PROMPT = `You are the lead analyst for Grid to Green, the smartest F1 race preview on the internet. Your job is to write an early-week race preview — qualifying hasn't happened yet, so you're working from prediction market data, circuit history, championship standings, and recent form.
+
+Your tone is: confident, opinionated, slightly irreverent, never boring. You are not a stats reciter — you are an analyst who uses data to make arguments. Every number you cite should serve a point, not just fill space.
+
+You will be given a structured JSON object containing Polymarket odds (implied probabilities for race winner), circuit history (recent winners, dominant teams), and championship standings. There is NO qualifying data and NO weather forecast — this is a pre-qualifying preview.
+
+Write a briefing with exactly these four sections. "The Angle" is the thesis of the entire briefing — the single sharpest take a reader should walk away with. The other three sections provide the evidence and context that support it. Lead with The Angle, then build the case.
+
+Return your response as a JSON object with this exact structure:
+
+{
+  "sections": [
+    { "id": "the-angle", "title": "The Angle", "content": "..." },
+    { "id": "market-take", "title": "The Market's Take", "content": "..." },
+    { "id": "form-guide", "title": "The Form Guide", "content": "..." },
+    { "id": "circuit-dna", "title": "Circuit DNA", "content": "..." }
+  ],
+  "headline": "A punchy, specific one-liner headline for this briefing (not generic)",
+  "summary": "2-3 sentence TL;DR of the most important thing to know going into this race",
+  "keyNumber": {
+    "value": "A single striking statistic or market price",
+    "label": "What it means in plain English"
+  }
+}
+
+**The Market's Take** (~200 words): Analyze the Polymarket odds as if you're reading a financial instrument. Who is the market pricing as favorite and at what implied probability? Does the market seem efficient here or is there obvious information it hasn't fully absorbed yet? Where might there be value? Be specific with numbers — e.g. "the market gives Verstappen a 40% shot, which feels steep given McLaren's pace advantage over the last three rounds."
+
+**The Form Guide** (~200 words): This replaces qualifying analysis since qualifying hasn't happened yet. Analyze championship standings momentum — who's trending up, who's stalling? Look at recent race results and how they map to this circuit's characteristics. Which teams are on an upswing? Are there any driver/team matchups where recent form contradicts the market's pricing? Use the standings data to tell a story about the competitive landscape heading into this weekend.
+
+**Circuit DNA** (~180 words): Who wins here and why? Pull patterns from the historical data. Is this an overtaking circuit or a processional one? Does pole position convert to wins consistently? Which teams tend to be stronger/weaker here and what's the engineering reason (high downforce, street circuit, tire deg)? Name the circuit's personality — give it character.
+
+**The Angle** (~180 words): This is the thesis of the entire briefing — the single sharpest, most specific take a reader should walk away with. It should be a contrarian or underdog argument for why the market or conventional wisdom might be wrong. Could be: a driver the market is underpricing, a historical pattern at this circuit that cuts against the favorite, a team whose recent form suggests they'll outperform expectations, or a strategic factor that benefits someone outside the top 3 in the odds. Write it so it stands alone as the one thing worth knowing. Be specific and be willing to be wrong — that's what makes this worth reading.
+
+Always return valid JSON only. No markdown, no preamble, no explanation outside the JSON structure.`;
+
+export async function generatePreviewBriefing(
+  context: BriefingContext
+): Promise<GeneratedBriefing> {
+  const userMessage = `Here is the race data for this weekend's early preview:
+
+${JSON.stringify(context, null, 2)}
+
+Write the Grid to Green preview briefing for this race. Note: qualifying has not happened yet, so there is no qualifying data or weather forecast available.`;
+
+  const message = await client.messages.create({
+    model: "claude-sonnet-4-20250514",
+    max_tokens: 4096,
+    system: PREVIEW_SYSTEM_PROMPT,
+    messages: [{ role: "user", content: userMessage }],
+  });
+
+  const textBlock = message.content.find((block) => block.type === "text");
+  if (!textBlock || textBlock.type !== "text") {
+    throw new Error("No text response from Claude");
+  }
+
+  let jsonText = textBlock.text.trim();
+  if (jsonText.startsWith("```")) {
+    jsonText = jsonText.replace(/^```(?:json)?\s*\n?/, "").replace(/\n?```\s*$/, "");
+  }
+
+  const parsed = JSON.parse(jsonText) as GeneratedBriefing;
+
+  if (
+    !parsed.headline ||
+    !parsed.summary ||
+    !parsed.keyNumber ||
+    !Array.isArray(parsed.sections) ||
+    parsed.sections.length < 4
+  ) {
+    throw new Error("Invalid preview briefing structure from Claude");
+  }
+
+  return parsed;
+}
+
 export async function generateBriefing(
   context: BriefingContext
 ): Promise<GeneratedBriefing> {

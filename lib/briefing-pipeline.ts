@@ -1,5 +1,6 @@
 import {
   fetchNextMeeting,
+  fetchAllMeetings,
   buildQualifyingResults,
   fetchQualifyingWeatherSummary,
 } from "./openf1";
@@ -11,7 +12,7 @@ import {
 } from "./jolpica";
 import { fetchAllRaceOdds, buildEventSlug } from "./polymarket";
 import { fetchRaceDayForecast } from "./weather";
-import { generateBriefing } from "./claude";
+import { generateBriefing, generatePreviewBriefing as generatePreview } from "./claude";
 import { storeBriefing } from "./kv";
 import { CIRCUIT_MAP } from "./circuits";
 import type { Briefing, BriefingContext, OpenF1Meeting } from "@/types";
@@ -182,9 +183,176 @@ export async function generateFullBriefing(
       ? { raceDayForecast: weatherForecast }
       : null,
     polymarketSlug: buildEventSlug(meeting.meeting_name, meeting.date_end),
+    briefingType: "full" as const,
   };
 
   await storeBriefing(briefing);
 
   return briefing;
+}
+
+/**
+ * Generate a preview briefing for a race (before qualifying).
+ * Uses market odds, circuit history, and standings only.
+ */
+export async function generatePreviewBriefing(
+  meeting: OpenF1Meeting
+): Promise<Briefing> {
+  const circuitId = CIRCUIT_MAP[meeting.circuit_short_name] ?? null;
+
+  const [driverStandings, constructorStandings, circuitInfo, historicalResults, odds] =
+    await Promise.all([
+      fetchDriverStandings().catch(() => []),
+      fetchConstructorStandings().catch(() => []),
+      circuitId ? fetchCircuitInfo(circuitId).catch(() => null) : Promise.resolve(null),
+      circuitId ? fetchCircuitHistory(circuitId, 5).catch(() => []) : Promise.resolve([]),
+      fetchAllRaceOdds(meeting.meeting_name, meeting.date_end).catch(() => ({
+        raceWinner: [],
+        headToHeads: [],
+      })),
+    ]);
+
+  const winners = historicalResults
+    .filter((r) => r.position === 1)
+    .sort((a, b) => b.season - a.season);
+
+  const teamWins = new Map<string, number>();
+  for (const w of winners) {
+    teamWins.set(w.constructorName, (teamWins.get(w.constructorName) ?? 0) + 1);
+  }
+  const dominantTeams = Array.from(teamWins.entries())
+    .sort((a, b) => b[1] - a[1])
+    .slice(0, 3)
+    .map(([team]) => team);
+
+  const slug = slugify(
+    `${meeting.year}-${meeting.meeting_name.replace(/\d{4}\s*/g, "")}`
+  );
+
+  const context: BriefingContext = {
+    race: {
+      name: meeting.meeting_name,
+      slug,
+      circuit: circuitInfo?.circuitName ?? meeting.circuit_short_name,
+      location: `${circuitInfo?.locality ?? meeting.location}, ${circuitInfo?.country ?? meeting.country_name}`,
+      raceDate: meeting.date_start,
+      laps: 0,
+      circuitLengthKm: 0,
+    },
+    qualifying: {
+      results: [],
+      sessionConditions: {
+        trackTempC: 0,
+        airTempC: 0,
+        humidity: 0,
+        wasWet: false,
+      },
+    },
+    odds: {
+      raceWinner: odds.raceWinner,
+      headToHeads: odds.headToHeads,
+    },
+    circuitHistory: {
+      recentWinners: winners.slice(0, 5).map((w) => ({
+        year: w.season,
+        winner: w.driverName,
+        team: w.constructorName,
+        startingPosition: w.grid,
+        fastestLap: w.fastestLapTime ?? "N/A",
+        safetyCars: null,
+      })),
+      dominantTeams,
+      averageLeadChanges: null,
+      safetyCarFrequency: "Unknown",
+    },
+    standings: {
+      drivers: driverStandings.slice(0, 20).map((d) => ({
+        position: d.position,
+        driverName: `${d.givenName} ${d.familyName}`,
+        driverCode: d.code,
+        team: d.constructorName,
+        points: d.points,
+      })),
+      constructors: constructorStandings.slice(0, 10).map((c) => ({
+        position: c.position,
+        team: c.constructorName,
+        points: c.points,
+      })),
+    },
+    weather: {
+      raceDayForecast: {
+        conditionSummary: "Forecast unavailable",
+        maxTempC: 0,
+        precipitationProbability: 0,
+        windSpeedKmh: 0,
+      },
+    },
+  };
+
+  const generated = await generatePreview(context);
+
+  const briefing: Briefing = {
+    slug,
+    raceName: meeting.meeting_name,
+    circuit: circuitInfo?.circuitName ?? meeting.circuit_short_name,
+    location: circuitInfo?.locality ?? meeting.location,
+    country: circuitInfo?.country ?? meeting.country_name,
+    raceDate: meeting.date_start,
+    generatedAt: new Date().toISOString(),
+    headline: generated.headline,
+    summary: generated.summary,
+    keyNumber: generated.keyNumber,
+    sections: generated.sections,
+    odds: {
+      raceWinner: odds.raceWinner,
+      headToHeads: odds.headToHeads,
+    },
+    qualifying: context.qualifying,
+    weather: null,
+    polymarketSlug: buildEventSlug(meeting.meeting_name, meeting.date_end),
+    briefingType: "preview",
+  };
+
+  await storeBriefing(briefing);
+
+  return briefing;
+}
+
+/**
+ * Generate preview briefings for all upcoming races that don't have a full briefing.
+ */
+export async function generateAllPreviews(): Promise<{
+  generated: string[];
+  skipped: string[];
+  failed: string[];
+}> {
+  const { getBriefing } = await import("./kv");
+  const meetings = await fetchAllMeetings();
+
+  const generated: string[] = [];
+  const skipped: string[] = [];
+  const failed: string[] = [];
+
+  for (const meeting of meetings) {
+    const slug = slugify(
+      `${meeting.year}-${meeting.meeting_name.replace(/\d{4}\s*/g, "")}`
+    );
+
+    // Skip if a full briefing already exists
+    const existing = await getBriefing(slug);
+    if (existing && existing.briefingType === "full") {
+      skipped.push(slug);
+      continue;
+    }
+
+    try {
+      await generatePreviewBriefing(meeting);
+      generated.push(slug);
+    } catch (error) {
+      console.error(`Failed to generate preview for ${slug}:`, error);
+      failed.push(slug);
+    }
+  }
+
+  return { generated, skipped, failed };
 }

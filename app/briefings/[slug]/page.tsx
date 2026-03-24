@@ -104,6 +104,21 @@ export default async function BriefingPage({
       <BriefingHero briefing={briefing} />
       <RaceCountdown raceDate={briefing.raceDate} />
 
+      {briefing.briefingType === "preview" && (
+        <div className="mx-auto max-w-7xl px-4 pt-6">
+          <div className="flex items-center gap-3 rounded-lg border border-racing-red/20 bg-racing-red/5 px-5 py-3">
+            <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-racing-red" />
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                Preview briefing
+              </span>{" "}
+              — this will be updated with qualifying data and weather after
+              Saturday&apos;s session.
+            </p>
+          </div>
+        </div>
+      )}
+
       {angleSection && (
         <TheAngle
           content={angleSection.content}

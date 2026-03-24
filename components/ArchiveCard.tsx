@@ -3,9 +3,10 @@ import type { BriefingMeta } from "@/types";
 
 interface ArchiveCardProps {
   meta: BriefingMeta;
+  showPreviewBadge?: boolean;
 }
 
-export function ArchiveCard({ meta }: ArchiveCardProps) {
+export function ArchiveCard({ meta, showPreviewBadge }: ArchiveCardProps) {
   const raceDate = new Date(meta.raceDate);
   const formattedDate = raceDate.toLocaleDateString("en-US", {
     month: "short",
@@ -22,6 +23,15 @@ export function ArchiveCard({ meta }: ArchiveCardProps) {
         <span>{meta.location}</span>
         <span className="text-border">|</span>
         <span>{formattedDate}</span>
+        {showPreviewBadge && (
+          <>
+            <span className="text-border">|</span>
+            <span className="inline-flex items-center gap-1 rounded-full bg-racing-red/10 px-2 py-0.5 text-[10px] font-medium uppercase tracking-wider text-racing-red">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-racing-red" />
+              Preview
+            </span>
+          </>
+        )}
       </div>
 
       <h3 className="mt-3 font-heading text-2xl tracking-wide text-foreground transition-colors group-hover:text-racing-red">

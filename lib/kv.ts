@@ -72,6 +72,7 @@ export async function storeBriefing(briefing: Briefing): Promise<void> {
     headline: briefing.headline,
     summary: briefing.summary,
     keyNumber: briefing.keyNumber,
+    briefingType: briefing.briefingType,
   };
 
   if (useLocal()) {

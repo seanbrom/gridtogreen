@@ -19,7 +19,24 @@ async function getPageData() {
     getAllBriefings(),
   ]);
 
-  return { briefing, recentBriefings: allBriefings.slice(0, 3) };
+  const now = new Date();
+  const pastBriefings = allBriefings.filter(
+    (b) => b.briefingType !== "preview" || new Date(b.raceDate) <= now
+  );
+  const previewBriefings = allBriefings
+    .filter(
+      (b) => b.briefingType === "preview" && new Date(b.raceDate) > now
+    )
+    .sort(
+      (a, b) =>
+        new Date(a.raceDate).getTime() - new Date(b.raceDate).getTime()
+    );
+
+  // Latest full briefing (not a preview)
+  const latestFull =
+    briefing && briefing.briefingType !== "preview" ? briefing : null;
+
+  return { briefing: latestFull, pastBriefings, previewBriefings };
 }
 
 async function getUpcomingData() {
@@ -31,12 +48,10 @@ async function getUpcomingData() {
 }
 
 export default async function HomePage() {
-  const [{ briefing, recentBriefings }, upcoming] = await Promise.all([
-    getPageData(),
-    getUpcomingData(),
-  ]);
+  const [{ briefing, pastBriefings, previewBriefings }, upcoming] =
+    await Promise.all([getPageData(), getUpcomingData()]);
 
-  // Check if the latest briefing is for the upcoming race
+  // Check if the latest full briefing is for the upcoming race
   const briefingIsForUpcoming =
     briefing && upcoming && briefing.raceName === upcoming.meeting.meeting_name;
 
@@ -81,7 +96,7 @@ export default async function HomePage() {
         </div>
       </section>
 
-      {/* If we have a briefing for this race, show it */}
+      {/* If the latest full briefing is for the upcoming race, show it inline */}
       {briefing && briefingIsForUpcoming && (
         <>
           <BriefingHero briefing={briefing} />
@@ -133,12 +148,12 @@ export default async function HomePage() {
         </>
       )}
 
-      {/* If no briefing yet for this race, show the upcoming race preview */}
+      {/* If no full briefing for the upcoming race, show the upcoming race preview */}
       {!briefingIsForUpcoming && upcoming && (
         <UpcomingRace data={upcoming} />
       )}
 
-      {/* If no briefing and no upcoming race data, show the empty state */}
+      {/* If no upcoming race data and no briefing, show empty state */}
       {!briefingIsForUpcoming && !upcoming && !briefing && (
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-24">
           <div className="text-center">
@@ -154,40 +169,59 @@ export default async function HomePage() {
         </div>
       )}
 
-      {/* If no briefing for upcoming but we have a past briefing, show it below */}
+      {/* Latest full briefing card (when not shown inline above) */}
       {!briefingIsForUpcoming && briefing && (
         <section className="border-t border-border/40">
           <div className="mx-auto max-w-7xl px-4 py-12">
             <h2 className="mb-6 font-heading text-2xl tracking-wide text-foreground">
               LATEST BRIEFING
             </h2>
-            <ArchiveCard key={briefing.slug} meta={{
-              slug: briefing.slug,
-              raceName: briefing.raceName,
-              location: briefing.location,
-              raceDate: briefing.raceDate,
-              generatedAt: briefing.generatedAt,
-              headline: briefing.headline,
-              summary: briefing.summary,
-              keyNumber: briefing.keyNumber,
-            }} />
+            <ArchiveCard
+              meta={{
+                slug: briefing.slug,
+                raceName: briefing.raceName,
+                location: briefing.location,
+                raceDate: briefing.raceDate,
+                generatedAt: briefing.generatedAt,
+                headline: briefing.headline,
+                summary: briefing.summary,
+                keyNumber: briefing.keyNumber,
+              }}
+            />
           </div>
         </section>
       )}
 
-      {/* Previous briefings */}
-      {recentBriefings.length > 0 && (
+      {/* Past briefings */}
+      {pastBriefings.length > 0 && (
         <section className="border-t border-border/40">
           <div className="mx-auto max-w-7xl px-4 py-12">
             <h2 className="mb-6 font-heading text-2xl tracking-wide text-foreground">
-              {briefingIsForUpcoming ? "PREVIOUS BRIEFINGS" : "ALL BRIEFINGS"}
+              PAST BRIEFINGS
             </h2>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
-              {recentBriefings
-                .filter((m) => !briefingIsForUpcoming || m.slug !== briefing?.slug)
+              {pastBriefings
+                .filter((m) => m.slug !== briefing?.slug)
+                .slice(0, 6)
                 .map((meta) => (
                   <ArchiveCard key={meta.slug} meta={meta} />
                 ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Preview briefings */}
+      {previewBriefings.length > 0 && (
+        <section className="border-t border-border/40">
+          <div className="mx-auto max-w-7xl px-4 py-12">
+            <h2 className="mb-6 font-heading text-2xl tracking-wide text-foreground">
+              PREVIEW BRIEFINGS
+            </h2>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {previewBriefings.slice(0, 6).map((meta) => (
+                <ArchiveCard key={meta.slug} meta={meta} showPreviewBadge />
+              ))}
             </div>
           </div>
         </section>
