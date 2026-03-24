@@ -9,7 +9,7 @@ import {
   fetchCircuitInfo,
   fetchCircuitHistory,
 } from "./jolpica";
-import { fetchAllRaceOdds } from "./polymarket";
+import { fetchAllRaceOdds, buildEventSlug } from "./polymarket";
 import { fetchRaceDayForecast } from "./weather";
 import { generateBriefing } from "./claude";
 import { storeBriefing } from "./kv";
@@ -181,6 +181,7 @@ export async function generateFullBriefing(
     weather: weatherForecast
       ? { raceDayForecast: weatherForecast }
       : null,
+    polymarketSlug: buildEventSlug(meeting.meeting_name, meeting.date_end),
   };
 
   await storeBriefing(briefing);

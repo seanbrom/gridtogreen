@@ -3,10 +3,17 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { getBriefing, getAllBriefings } from "@/lib/kv";
 import { BriefingHero } from "@/components/briefing/BriefingHero";
+import { TheAngle } from "@/components/briefing/TheAngle";
 import { OddsWidget } from "@/components/briefing/OddsWidget";
 import { BriefingContent } from "@/components/briefing/BriefingContent";
 import { ShareCard } from "@/components/briefing/ShareCard";
 import { RaceCountdown } from "@/components/RaceCountdown";
+import { OddsChart } from "@/components/briefing/OddsChart";
+import {
+  buildEventSlug,
+  fetchOddsHistoryBySlug,
+  resolvePolymarketSlug,
+} from "@/lib/polymarket";
 
 async function getBriefingData(slug: string) {
   "use cache";
@@ -14,6 +21,22 @@ async function getBriefingData(slug: string) {
   cacheTag("briefing");
 
   return getBriefing(slug);
+}
+
+async function getCachedPolymarketSlug(raceName: string, raceDate: string) {
+  "use cache";
+  cacheLife("max");
+  cacheTag("polymarket-slug");
+
+  return resolvePolymarketSlug(raceName, raceDate);
+}
+
+async function getOddsHistory(polymarketSlug: string) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("odds-history");
+
+  return fetchOddsHistoryBySlug(polymarketSlug);
 }
 
 export async function generateStaticParams() {
@@ -60,19 +83,56 @@ export default async function BriefingPage({
     notFound();
   }
 
+  const angleSection = briefing.sections.find((s) => s.id === "the-angle");
+  const remainingSections = briefing.sections.filter(
+    (s) => s.id !== "the-angle"
+  );
+
+  // Use stored slug or resolve it by trying date offsets from the stored raceDate.
+  // Legacy briefings store the Friday meeting start; the Polymarket slug uses the
+  // actual race day which varies (+1 to +2 days).
+  const pmSlug =
+    briefing.polymarketSlug ??
+    (await getCachedPolymarketSlug(briefing.raceName, briefing.raceDate));
+  const polymarketUrl = `https://polymarket.com/event/${pmSlug}`;
+
+  // Fetch fresh odds history at render time (cached for hours)
+  const oddsHistory = await getOddsHistory(pmSlug).catch(() => []);
+
   return (
     <>
       <BriefingHero briefing={briefing} />
       <RaceCountdown raceDate={briefing.raceDate} />
 
+      {angleSection && (
+        <TheAngle
+          content={angleSection.content}
+          polymarketUrl={polymarketUrl}
+        />
+      )}
+
       <div className="mx-auto max-w-7xl px-4 py-8">
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <BriefingContent sections={briefing.sections} />
+          <div className="space-y-6 lg:col-span-2">
+            {oddsHistory.length > 0 && (
+              <OddsChart oddsHistory={oddsHistory} />
+            )}
+            <BriefingContent sections={remainingSections} />
           </div>
 
           <aside className="space-y-6">
-            <OddsWidget raceWinner={briefing.odds.raceWinner} />
+            <OddsWidget
+              raceWinner={
+                oddsHistory.length > 0
+                  ? oddsHistory.map((d) => ({
+                      driverName: d.driverName,
+                      driverCode: d.driverCode,
+                      impliedProbability: d.currentProbability,
+                      price: d.currentProbability,
+                    }))
+                  : briefing.odds.raceWinner
+              }
+            />
             <ShareCard slug={briefing.slug} headline={briefing.headline} />
 
             {briefing.qualifying.results.length > 0 && (

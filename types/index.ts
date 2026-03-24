@@ -246,6 +246,22 @@ export interface BriefingContext {
 }
 
 // ============================================================
+// Polymarket Price History Types
+// ============================================================
+
+export interface PricePoint {
+  t: number; // unix timestamp
+  p: number; // price (0-1 probability)
+}
+
+export interface DriverPriceHistory {
+  driverName: string;
+  driverCode: string;
+  currentProbability: number;
+  history: PricePoint[];
+}
+
+// ============================================================
 // Generated Briefing (Claude output)
 // ============================================================
 
@@ -292,6 +308,7 @@ export interface Briefing {
   };
   qualifying: BriefingContext["qualifying"];
   weather: BriefingContext["weather"] | null;
+  polymarketSlug?: string;
 }
 
 export interface BriefingMeta {
