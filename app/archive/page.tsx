@@ -4,8 +4,9 @@ import { getAllBriefings } from "@/lib/kv";
 import { ArchiveCard } from "@/components/ArchiveCard";
 
 export const metadata: Metadata = {
-  title: "Archive",
-  description: "All past Grid to Green race briefings.",
+  title: "F1 Race Briefing Archive",
+  description:
+    "Browse all AI-generated Formula 1 race briefings — previews powered by prediction markets, qualifying telemetry, and circuit history.",
 };
 
 async function getArchiveData() {

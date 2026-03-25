@@ -3,6 +3,7 @@ import { Geist, Geist_Mono } from "next/font/google";
 import localFont from "next/font/local";
 import { Nav } from "@/components/layout/Nav";
 import { Footer } from "@/components/layout/Footer";
+import { getBaseUrl } from "@/lib/utils";
 import "./globals.css";
 
 const geistSans = Geist({
@@ -28,15 +29,25 @@ export const metadata: Metadata = {
   },
   description:
     "AI-generated Formula 1 race previews synthesizing prediction markets, qualifying telemetry, historical data, and weather forecasts.",
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000"
-  ),
+  metadataBase: new URL(getBaseUrl()),
   openGraph: {
     title: "Grid to Green",
     description: "The smartest F1 race preview on the internet.",
     type: "website",
   },
+  twitter: {
+    card: "summary_large_image",
+  },
 };
+
+const websiteJsonLd = JSON.stringify({
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  name: "Grid to Green",
+  url: getBaseUrl(),
+  description:
+    "AI-generated Formula 1 race previews synthesizing prediction markets, qualifying telemetry, historical data, and weather forecasts.",
+});
 
 export default function RootLayout({
   children,
@@ -49,6 +60,10 @@ export default function RootLayout({
       className={`${geistSans.variable} ${geistMono.variable} ${bebasNeue.variable} h-full antialiased dark`}
     >
       <body className="min-h-full flex flex-col bg-background text-foreground">
+        <script
+          type="application/ld+json"
+          dangerouslySetInnerHTML={{ __html: websiteJsonLd }}
+        />
         <Nav />
         <main className="flex-1">{children}</main>
         <Footer />

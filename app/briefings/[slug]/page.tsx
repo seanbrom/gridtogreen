@@ -9,11 +9,14 @@ import { BriefingContent } from "@/components/briefing/BriefingContent";
 import { ShareCard } from "@/components/briefing/ShareCard";
 import { RaceCountdown } from "@/components/RaceCountdown";
 import { OddsChart } from "@/components/briefing/OddsChart";
+import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { ArchiveCard } from "@/components/ArchiveCard";
 import {
   buildEventSlug,
   fetchOddsHistoryBySlug,
   resolvePolymarketSlug,
 } from "@/lib/polymarket";
+import { getBaseUrl } from "@/lib/utils";
 
 async function getBriefingData(slug: string) {
   "use cache";
@@ -37,6 +40,14 @@ async function getOddsHistory(polymarketSlug: string) {
   cacheTag("odds-history");
 
   return fetchOddsHistoryBySlug(polymarketSlug);
+}
+
+async function getCachedAllBriefings() {
+  "use cache";
+  cacheLife("max");
+  cacheTag("briefing");
+
+  return getAllBriefings();
 }
 
 export async function generateStaticParams() {
@@ -94,13 +105,87 @@ export default async function BriefingPage({
   const pmSlug =
     briefing.polymarketSlug ??
     (await getCachedPolymarketSlug(briefing.raceName, briefing.raceDate));
+
+  // Fetch odds history and all briefings in parallel (independent of each other)
+  const [oddsHistory, allBriefings] = await Promise.all([
+    getOddsHistory(pmSlug).catch(() => []),
+    getCachedAllBriefings(),
+  ]);
+
   const polymarketUrl = `https://polymarket.com/event/${pmSlug}`;
 
-  // Fetch fresh odds history at render time (cached for hours)
-  const oddsHistory = await getOddsHistory(pmSlug).catch(() => []);
+  const raceTimeMs = new Date(briefing.raceDate).getTime();
+  const relatedBriefings = allBriefings
+    .filter((b) => b.slug !== briefing.slug)
+    .map((b) => ({
+      meta: b,
+      distance: Math.abs(new Date(b.raceDate).getTime() - raceTimeMs),
+    }))
+    .sort((a, b) => a.distance - b.distance)
+    .slice(0, 3)
+    .map((x) => x.meta);
+
+  const baseUrl = getBaseUrl();
 
   return (
     <>
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "Article",
+            headline: briefing.headline,
+            description: briefing.summary,
+            datePublished: briefing.generatedAt,
+            dateModified: briefing.generatedAt,
+            author: {
+              "@type": "Organization",
+              name: "Grid to Green",
+              url: baseUrl,
+            },
+            publisher: {
+              "@type": "Organization",
+              name: "Grid to Green",
+              url: baseUrl,
+            },
+            mainEntityOfPage: {
+              "@type": "WebPage",
+              "@id": `${baseUrl}/briefings/${briefing.slug}`,
+            },
+          }),
+        }}
+      />
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{
+          __html: JSON.stringify({
+            "@context": "https://schema.org",
+            "@type": "BreadcrumbList",
+            itemListElement: [
+              {
+                "@type": "ListItem",
+                position: 1,
+                name: "Home",
+                item: baseUrl,
+              },
+              {
+                "@type": "ListItem",
+                position: 2,
+                name: "Briefings",
+                item: `${baseUrl}/archive`,
+              },
+              {
+                "@type": "ListItem",
+                position: 3,
+                name: briefing.raceName,
+                item: `${baseUrl}/briefings/${briefing.slug}`,
+              },
+            ],
+          }),
+        }}
+      />
+      <Breadcrumbs raceName={briefing.raceName} />
       <BriefingHero briefing={briefing} />
       <RaceCountdown raceDate={briefing.raceDate} raceStartTime={briefing.raceStartTime} />
 
@@ -183,6 +268,26 @@ export default async function BriefingPage({
           </aside>
         </div>
       </div>
+
+      {relatedBriefings.length > 0 && (
+        <section className="border-t border-border/30">
+          <div className="mx-auto max-w-7xl px-4 py-12">
+            <div className="mb-6 flex items-center gap-3">
+              <h2 className="font-heading text-2xl tracking-wide text-foreground">
+                MORE BRIEFINGS
+              </h2>
+              <span className="font-mono text-[10px] tracking-wider text-muted-foreground/40">
+                //&nbsp;RELATED
+              </span>
+            </div>
+            <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
+              {relatedBriefings.map((meta) => (
+                <ArchiveCard key={meta.slug} meta={meta} />
+              ))}
+            </div>
+          </div>
+        </section>
+      )}
     </>
   );
 }
