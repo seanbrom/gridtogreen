@@ -1,10 +1,13 @@
+import Link from "next/link";
 import type { Briefing } from "@/types";
+import { findCircuitIdForBriefing } from "@/lib/circuits";
 
 interface BriefingHeroProps {
   briefing: Briefing;
 }
 
 export function BriefingHero({ briefing }: BriefingHeroProps) {
+  const circuitId = findCircuitIdForBriefing(briefing.circuit);
   const raceDate = new Date(briefing.raceDate);
   const formattedDate = raceDate.toLocaleDateString("en-US", {
     weekday: "long",
@@ -26,11 +29,23 @@ export function BriefingHero({ briefing }: BriefingHeroProps) {
             <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-racing-red" />
             {briefing.briefingType === "preview" ? "PREVIEW" : "RACE BRIEFING"}
           </span>
-          <span className="font-mono text-xs">{briefing.circuit}</span>
+          {circuitId ? (
+            <Link href={`/circuits/${circuitId}`} className="font-mono text-xs transition-colors hover:text-foreground">
+              {briefing.circuit}
+            </Link>
+          ) : (
+            <span className="font-mono text-xs">{briefing.circuit}</span>
+          )}
           <span className="text-border/40">|</span>
-          <span className="font-mono text-xs">
-            {briefing.location}, {briefing.country}
-          </span>
+          {circuitId ? (
+            <Link href={`/circuits/${circuitId}`} className="font-mono text-xs transition-colors hover:text-foreground">
+              {briefing.location}, {briefing.country}
+            </Link>
+          ) : (
+            <span className="font-mono text-xs">
+              {briefing.location}, {briefing.country}
+            </span>
+          )}
         </div>
 
         {/* Race name */}

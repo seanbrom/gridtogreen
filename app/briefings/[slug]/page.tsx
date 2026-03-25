@@ -17,6 +17,8 @@ import {
   resolvePolymarketSlug,
 } from "@/lib/polymarket";
 import { getBaseUrl } from "@/lib/utils";
+import { findCircuitIdForBriefing, getCircuitMeta } from "@/lib/circuits";
+import Link from "next/link";
 
 async function getBriefingData(slug: string) {
   "use cache";
@@ -265,6 +267,31 @@ export default async function BriefingPage({
                 </div>
               </div>
             )}
+
+            {/* Circuit link */}
+            {(() => {
+              const circuitId = findCircuitIdForBriefing(briefing.circuit);
+              const circuitMeta = circuitId
+                ? getCircuitMeta(circuitId)
+                : undefined;
+              if (!circuitMeta) return null;
+              return (
+                <Link
+                  href={`/circuits/${circuitMeta.circuitId}`}
+                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-4 text-sm transition-colors hover:border-racing-red/40"
+                >
+                  <span className="text-racing-red">&rarr;</span>
+                  <div>
+                    <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
+                      Circuit Guide
+                    </div>
+                    <div className="text-foreground">
+                      {circuitMeta.grandPrixName.replace(" Grand Prix", "")} history &amp; stats
+                    </div>
+                  </div>
+                </Link>
+              );
+            })()}
           </aside>
         </div>
       </div>

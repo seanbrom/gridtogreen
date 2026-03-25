@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { UpcomingRaceData } from "@/lib/upcoming-race";
+import { CIRCUIT_MAP } from "@/lib/circuits";
 import { OddsWidget } from "@/components/briefing/OddsWidget";
 import { RaceCountdown } from "@/components/RaceCountdown";
 
@@ -8,6 +10,7 @@ interface UpcomingRaceProps {
 
 export function UpcomingRace({ data }: UpcomingRaceProps) {
   const { meeting, circuit, recentWinners, driverStandings, constructorStandings, odds, weather } = data;
+  const circuitId = CIRCUIT_MAP[meeting.circuit_short_name] ?? null;
 
   const raceDate = new Date(meeting.date_start);
   const formattedDate = raceDate.toLocaleDateString("en-US", {
@@ -28,12 +31,25 @@ export function UpcomingRace({ data }: UpcomingRaceProps) {
               <span className="mr-1.5 h-1.5 w-1.5 rounded-full bg-racing-red animate-pulse" />
               UP NEXT
             </span>
-            <span>{circuit?.circuitName ?? meeting.circuit_short_name}</span>
+            {circuitId ? (
+              <Link href={`/circuits/${circuitId}`} className="transition-colors hover:text-foreground">
+                {circuit?.circuitName ?? meeting.circuit_short_name}
+              </Link>
+            ) : (
+              <span>{circuit?.circuitName ?? meeting.circuit_short_name}</span>
+            )}
             <span className="text-border">|</span>
-            <span>
-              {circuit?.locality ?? meeting.location},{" "}
-              {circuit?.country ?? meeting.country_name}
-            </span>
+            {circuitId ? (
+              <Link href={`/circuits/${circuitId}`} className="transition-colors hover:text-foreground">
+                {circuit?.locality ?? meeting.location},{" "}
+                {circuit?.country ?? meeting.country_name}
+              </Link>
+            ) : (
+              <span>
+                {circuit?.locality ?? meeting.location},{" "}
+                {circuit?.country ?? meeting.country_name}
+              </span>
+            )}
           </div>
 
           <h1 className="mt-4 font-heading text-4xl tracking-wide text-foreground md:text-6xl lg:text-7xl">
