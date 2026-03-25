@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { revalidateTag } from "next/cache";
 import { generateFullBriefing } from "@/lib/briefing-pipeline";
+import { fetchAllMeetings } from "@/lib/openf1";
 
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
@@ -9,7 +10,34 @@ export async function POST(request: NextRequest) {
   }
 
   try {
-    const briefing = await generateFullBriefing();
+    // Optional: target a specific race by meeting_key or race name
+    const body = await request.json().catch(() => ({}));
+    const { meetingKey, raceName } = body as {
+      meetingKey?: number;
+      raceName?: string;
+    };
+
+    let targetMeeting;
+    if (meetingKey || raceName) {
+      const meetings = await fetchAllMeetings();
+      targetMeeting = meetings.find(
+        (m) =>
+          (meetingKey && m.meeting_key === meetingKey) ||
+          (raceName &&
+            m.meeting_name.toLowerCase().includes(raceName.toLowerCase()))
+      );
+      if (!targetMeeting) {
+        return NextResponse.json(
+          {
+            success: false,
+            error: `No meeting found for ${meetingKey ? `key ${meetingKey}` : `"${raceName}"`}`,
+          },
+          { status: 404 }
+        );
+      }
+    }
+
+    const briefing = await generateFullBriefing(targetMeeting);
 
     revalidateTag("briefing", "max");
 

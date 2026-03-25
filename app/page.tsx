@@ -1,13 +1,20 @@
 import { cacheLife, cacheTag } from "next/cache";
-import { getLatestBriefing, getAllBriefings } from "@/lib/kv";
+import { getLatestBriefing, getAllBriefings, getBriefing } from "@/lib/kv";
 import { fetchUpcomingRacePreview } from "@/lib/upcoming-race";
 import { BriefingHero } from "@/components/briefing/BriefingHero";
+import { TheAngle } from "@/components/briefing/TheAngle";
 import { OddsWidget } from "@/components/briefing/OddsWidget";
+import { OddsChart } from "@/components/briefing/OddsChart";
 import { BriefingContent } from "@/components/briefing/BriefingContent";
 import { ShareCard } from "@/components/briefing/ShareCard";
 import { RaceCountdown } from "@/components/RaceCountdown";
 import { ArchiveCard } from "@/components/ArchiveCard";
 import { UpcomingRace } from "@/components/UpcomingRace";
+import {
+  buildEventSlug,
+  fetchOddsHistoryBySlug,
+  resolvePolymarketSlug,
+} from "@/lib/polymarket";
 
 async function getPageData() {
   "use cache";
@@ -39,6 +46,39 @@ async function getPageData() {
   return { briefing: latestFull, pastBriefings, previewBriefings };
 }
 
+async function getUpcomingPreview() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("briefing");
+
+  const all = await getAllBriefings();
+  const now = new Date();
+  const nextPreview = all
+    .filter((b) => b.briefingType === "preview" && new Date(b.raceDate) > now)
+    .sort(
+      (a, b) =>
+        new Date(a.raceDate).getTime() - new Date(b.raceDate).getTime()
+    )[0];
+  if (!nextPreview) return null;
+  return getBriefing(nextPreview.slug);
+}
+
+async function getHomeOddsHistory(polymarketSlug: string) {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("odds-history");
+
+  return fetchOddsHistoryBySlug(polymarketSlug);
+}
+
+async function getCachedPmSlug(raceName: string, raceDate: string) {
+  "use cache";
+  cacheLife("max");
+  cacheTag("polymarket-slug");
+
+  return resolvePolymarketSlug(raceName, raceDate);
+}
+
 async function getUpcomingData() {
   "use cache";
   cacheLife({ revalidate: 300 }); // refresh every 5 minutes for fresh odds
@@ -48,12 +88,22 @@ async function getUpcomingData() {
 }
 
 export default async function HomePage() {
-  const [{ briefing, pastBriefings, previewBriefings }, upcoming] =
-    await Promise.all([getPageData(), getUpcomingData()]);
+  const [{ briefing, pastBriefings, previewBriefings }, upcoming, upcomingPreview] =
+    await Promise.all([getPageData(), getUpcomingData(), getUpcomingPreview()]);
 
   // Check if the latest full briefing is for the upcoming race
   const briefingIsForUpcoming =
     briefing && upcoming && briefing.raceName === upcoming.meeting.meeting_name;
+
+  // Resolve Polymarket data for the upcoming preview
+  let previewPmSlug: string | null = null;
+  let previewOddsHistory: Awaited<ReturnType<typeof fetchOddsHistoryBySlug>> = [];
+  if (upcomingPreview && !briefingIsForUpcoming) {
+    previewPmSlug =
+      upcomingPreview.polymarketSlug ??
+      (await getCachedPmSlug(upcomingPreview.raceName, upcomingPreview.raceDate));
+    previewOddsHistory = await getHomeOddsHistory(previewPmSlug).catch(() => []);
+  }
 
   return (
     <>
@@ -100,7 +150,7 @@ export default async function HomePage() {
       {briefing && briefingIsForUpcoming && (
         <>
           <BriefingHero briefing={briefing} />
-          <RaceCountdown raceDate={briefing.raceDate} />
+          <RaceCountdown raceDate={briefing.raceDate} raceStartTime={briefing.raceStartTime} />
 
           <div className="mx-auto max-w-7xl px-4 py-8">
             <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
@@ -148,13 +198,86 @@ export default async function HomePage() {
         </>
       )}
 
-      {/* If no full briefing for the upcoming race, show the upcoming race preview */}
-      {!briefingIsForUpcoming && upcoming && (
+      {/* If no full briefing for the upcoming race, show preview briefing */}
+      {!briefingIsForUpcoming && upcomingPreview && (
+        <>
+          <BriefingHero briefing={upcomingPreview} />
+          <RaceCountdown raceDate={upcomingPreview.raceDate} raceStartTime={upcomingPreview.raceStartTime} />
+
+          <div className="mx-auto max-w-7xl px-4 pt-6">
+            <div className="flex items-center gap-3 rounded-lg border border-racing-red/20 bg-racing-red/5 px-5 py-3">
+              <span className="h-2 w-2 shrink-0 animate-pulse rounded-full bg-racing-red" />
+              <p className="text-sm text-muted-foreground">
+                <span className="font-medium text-foreground">
+                  Preview briefing
+                </span>{" "}
+                — will be updated with qualifying data and weather after
+                Saturday&apos;s session.
+              </p>
+            </div>
+          </div>
+
+          {(() => {
+            const angleSection = upcomingPreview.sections.find(
+              (s) => s.id === "the-angle"
+            );
+            const remainingSections = upcomingPreview.sections.filter(
+              (s) => s.id !== "the-angle"
+            );
+            const polymarketUrl = previewPmSlug
+              ? `https://polymarket.com/event/${previewPmSlug}`
+              : null;
+
+            return (
+              <>
+                {angleSection && polymarketUrl && (
+                  <TheAngle
+                    content={angleSection.content}
+                    polymarketUrl={polymarketUrl}
+                  />
+                )}
+
+                <div className="mx-auto max-w-7xl px-4 py-8">
+                  <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
+                    <div className="space-y-6 lg:col-span-2">
+                      {previewOddsHistory.length > 0 && (
+                        <OddsChart oddsHistory={previewOddsHistory} />
+                      )}
+                      <BriefingContent sections={remainingSections} />
+                    </div>
+                    <aside className="space-y-6">
+                      <OddsWidget
+                        raceWinner={
+                          previewOddsHistory.length > 0
+                            ? previewOddsHistory.map((d) => ({
+                                driverName: d.driverName,
+                                driverCode: d.driverCode,
+                                impliedProbability: d.currentProbability,
+                                price: d.currentProbability,
+                              }))
+                            : upcomingPreview.odds.raceWinner
+                        }
+                      />
+                      <ShareCard
+                        slug={upcomingPreview.slug}
+                        headline={upcomingPreview.headline}
+                      />
+                    </aside>
+                  </div>
+                </div>
+              </>
+            );
+          })()}
+        </>
+      )}
+
+      {/* Fall back to raw UpcomingRace if no preview briefing exists */}
+      {!briefingIsForUpcoming && !upcomingPreview && upcoming && (
         <UpcomingRace data={upcoming} />
       )}
 
       {/* If no upcoming race data and no briefing, show empty state */}
-      {!briefingIsForUpcoming && !upcoming && !briefing && (
+      {!briefingIsForUpcoming && !upcoming && !upcomingPreview && !briefing && (
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-24">
           <div className="text-center">
             <h1 className="font-heading text-5xl tracking-wide text-foreground md:text-7xl">

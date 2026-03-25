@@ -3,6 +3,7 @@ import {
   fetchAllMeetings,
   buildQualifyingResults,
   fetchQualifyingWeatherSummary,
+  fetchRaceSessionStart,
 } from "./openf1";
 import {
   fetchDriverStandings,
@@ -44,6 +45,7 @@ export async function generateFullBriefing(
     circuitInfo,
     historicalResults,
     odds,
+    raceStartTime,
   ] = await Promise.all([
     buildQualifyingResults(meeting.meeting_key).catch(() => null),
     fetchQualifyingWeatherSummary(meeting.meeting_key).catch(() => null),
@@ -55,6 +57,7 @@ export async function generateFullBriefing(
       raceWinner: [],
       headToHeads: [],
     })),
+    fetchRaceSessionStart(meeting.meeting_key).catch(() => null),
   ]);
 
   // Step 3: Fetch weather (needs lat/lng from circuit info)
@@ -184,6 +187,7 @@ export async function generateFullBriefing(
       : null,
     polymarketSlug: buildEventSlug(meeting.meeting_name, meeting.date_end),
     briefingType: "full" as const,
+    raceStartTime: raceStartTime ?? undefined,
   };
 
   await storeBriefing(briefing);
@@ -200,7 +204,7 @@ export async function generatePreviewBriefing(
 ): Promise<Briefing> {
   const circuitId = CIRCUIT_MAP[meeting.circuit_short_name] ?? null;
 
-  const [driverStandings, constructorStandings, circuitInfo, historicalResults, odds] =
+  const [driverStandings, constructorStandings, circuitInfo, historicalResults, odds, raceStartTime] =
     await Promise.all([
       fetchDriverStandings().catch(() => []),
       fetchConstructorStandings().catch(() => []),
@@ -210,6 +214,7 @@ export async function generatePreviewBriefing(
         raceWinner: [],
         headToHeads: [],
       })),
+      fetchRaceSessionStart(meeting.meeting_key).catch(() => null),
     ]);
 
   const winners = historicalResults
@@ -311,6 +316,7 @@ export async function generatePreviewBriefing(
     weather: null,
     polymarketSlug: buildEventSlug(meeting.meeting_name, meeting.date_end),
     briefingType: "preview",
+    raceStartTime: raceStartTime ?? undefined,
   };
 
   await storeBriefing(briefing);

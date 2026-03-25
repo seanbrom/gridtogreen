@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 
 interface RaceCountdownProps {
   raceDate: string;
+  raceStartTime?: string;
 }
 
 interface TimeLeft {
@@ -25,8 +26,8 @@ function calcTimeLeft(target: Date): TimeLeft | null {
   };
 }
 
-export function RaceCountdown({ raceDate }: RaceCountdownProps) {
-  const target = new Date(raceDate);
+export function RaceCountdown({ raceDate, raceStartTime }: RaceCountdownProps) {
+  const target = new Date(raceStartTime ?? raceDate);
   const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(() =>
     calcTimeLeft(target)
   );

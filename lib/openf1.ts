@@ -44,6 +44,15 @@ export async function fetchNextMeeting(): Promise<OpenF1Meeting | null> {
   return sorted[0] ?? null;
 }
 
+export async function fetchRaceSessionStart(
+  meetingKey: number
+): Promise<string | null> {
+  const sessions = await fetchWithRetry<OpenF1Session[]>(
+    `${BASE_URL}/sessions?meeting_key=${meetingKey}&session_name=Race`
+  );
+  return sessions[0]?.date_start ?? null;
+}
+
 export async function fetchQualifyingSession(
   meetingKey: number
 ): Promise<OpenF1Session | null> {

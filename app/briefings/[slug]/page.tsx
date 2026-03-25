@@ -102,7 +102,7 @@ export default async function BriefingPage({
   return (
     <>
       <BriefingHero briefing={briefing} />
-      <RaceCountdown raceDate={briefing.raceDate} />
+      <RaceCountdown raceDate={briefing.raceDate} raceStartTime={briefing.raceStartTime} />
 
       {briefing.briefingType === "preview" && (
         <div className="mx-auto max-w-7xl px-4 pt-6">

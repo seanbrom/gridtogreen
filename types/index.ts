@@ -310,6 +310,7 @@ export interface Briefing {
   weather: BriefingContext["weather"] | null;
   polymarketSlug?: string;
   briefingType?: "preview" | "full";
+  raceStartTime?: string;
 }
 
 export interface BriefingMeta {
