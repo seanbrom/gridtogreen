@@ -11,8 +11,16 @@ const INDEX_KEY = "briefings:index";
 const DATA_DIR = join(process.cwd(), ".data");
 const STORE_FILE = join(DATA_DIR, "kv.json");
 
+function getUpstashUrl(): string | undefined {
+  return process.env.UPSTASH_REDIS_REST_URL ?? process.env.KV_REST_API_URL;
+}
+
+function getUpstashToken(): string | undefined {
+  return process.env.UPSTASH_REDIS_REST_TOKEN ?? process.env.KV_REST_API_TOKEN;
+}
+
 function useLocal(): boolean {
-  return !process.env.UPSTASH_REDIS_REST_URL;
+  return !getUpstashUrl();
 }
 
 function readStore(): Record<string, unknown> {
@@ -50,8 +58,8 @@ async function getKv(): Promise<any> {
   if (!redis) {
     const { Redis } = await import("@upstash/redis");
     redis = new Redis({
-      url: process.env.UPSTASH_REDIS_REST_URL!,
-      token: process.env.UPSTASH_REDIS_REST_TOKEN!,
+      url: getUpstashUrl()!,
+      token: getUpstashToken()!,
     });
   }
   return redis;

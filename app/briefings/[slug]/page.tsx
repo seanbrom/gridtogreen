@@ -55,7 +55,7 @@ export async function generateMetadata({
   params: Promise<{ slug: string }>;
 }): Promise<Metadata> {
   const { slug } = await params;
-  const briefing = await getBriefing(slug);
+  const briefing = await getBriefingData(slug);
 
   if (!briefing) {
     return { title: "Briefing Not Found" };
