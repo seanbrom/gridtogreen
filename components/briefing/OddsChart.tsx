@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import {
   LineChart,
   Line,
@@ -10,6 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 import type { DriverPriceHistory } from "@/types";
+import { getDriverByCode } from "@/lib/drivers";
 
 interface OddsChartProps {
   oddsHistory: DriverPriceHistory[];
@@ -98,20 +100,32 @@ export function OddsChart({ oddsHistory }: OddsChartProps) {
 
       {/* Legend */}
       <div className="mb-4 flex flex-wrap gap-x-5 gap-y-2">
-        {oddsHistory.map((driver, i) => (
-          <div key={driver.driverCode} className="flex items-center gap-2">
-            <span
-              className="h-2.5 w-2.5 rounded-full"
-              style={{ backgroundColor: LINE_COLORS[i % LINE_COLORS.length] }}
-            />
-            <span className="text-sm text-foreground">
-              {driver.driverName}
-            </span>
-            <span className="text-sm font-medium text-foreground">
-              {Math.round(driver.currentProbability * 100)}%
-            </span>
-          </div>
-        ))}
+        {oddsHistory.map((driver, i) => {
+          const driverMeta = getDriverByCode(driver.driverCode);
+          return (
+            <div key={driver.driverCode} className="flex items-center gap-2">
+              <span
+                className="h-2.5 w-2.5 rounded-full"
+                style={{ backgroundColor: LINE_COLORS[i % LINE_COLORS.length] }}
+              />
+              {driverMeta ? (
+                <Link
+                  href={`/drivers/${driverMeta.driverId}`}
+                  className="text-sm text-foreground transition-colors hover:text-racing-red"
+                >
+                  {driver.driverName}
+                </Link>
+              ) : (
+                <span className="text-sm text-foreground">
+                  {driver.driverName}
+                </span>
+              )}
+              <span className="text-sm font-medium text-foreground">
+                {Math.round(driver.currentProbability * 100)}%
+              </span>
+            </div>
+          );
+        })}
       </div>
 
       {/* Chart */}

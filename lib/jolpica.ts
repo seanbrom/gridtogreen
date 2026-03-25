@@ -136,3 +136,49 @@ export async function fetchCircuitHistory(
 
   return results.sort((a, b) => b.season - a.season || a.position - b.position);
 }
+
+export interface DriverSeasonResult {
+  round: number;
+  raceName: string;
+  circuitId: string;
+  position: number;
+  grid: number;
+  points: number;
+  laps: number;
+  status: string;
+  time: string | null;
+  fastestLapTime: string | null;
+  constructorName: string;
+}
+
+export async function fetchDriverSeasonResults(
+  driverId: string,
+  season: string = "current"
+): Promise<DriverSeasonResult[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await fetchWithRetry<any>(
+    `${BASE_URL}/${season}/drivers/${driverId}/results.json?limit=100`
+  );
+
+  const races = data?.MRData?.RaceTable?.Races;
+  if (!Array.isArray(races)) return [];
+
+  return races.map((race: Record<string, unknown>) => {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const result = (race as any).Results?.[0];
+    if (!result) return null;
+    return {
+      round: parseInt(race.round as string, 10),
+      raceName: race.raceName as string,
+      circuitId: (race as Record<string, Record<string, string>>).Circuit?.circuitId ?? "",
+      position: parseInt(result.position, 10),
+      grid: parseInt(result.grid, 10),
+      points: parseFloat(result.points),
+      laps: parseInt(result.laps, 10),
+      status: result.status,
+      time: result.Time?.time ?? null,
+      fastestLapTime: result.FastestLap?.Time?.time ?? null,
+      constructorName: result.Constructor?.name ?? "Unknown",
+    };
+  }).filter((r: DriverSeasonResult | null): r is DriverSeasonResult => r !== null);
+}

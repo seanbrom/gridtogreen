@@ -18,6 +18,7 @@ import {
 } from "@/lib/polymarket";
 import { getBaseUrl } from "@/lib/utils";
 import { findCircuitIdForBriefing, getCircuitMeta } from "@/lib/circuits";
+import { getDriverByCode } from "@/lib/drivers";
 import Link from "next/link";
 
 async function getBriefingData(slug: string) {
@@ -243,27 +244,48 @@ export default async function BriefingPage({
                   Qualifying Grid
                 </span>
                 <div className="space-y-2">
-                  {briefing.qualifying.results.slice(0, 10).map((q) => (
-                    <div
-                      key={q.driverCode}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="w-5 text-right font-mono text-xs text-muted-foreground">
-                          P{q.position}
+                  {briefing.qualifying.results.slice(0, 10).map((q) => {
+                    const qDriver = getDriverByCode(q.driverCode);
+                    return (
+                      <div
+                        key={q.driverCode}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className="w-5 text-right font-mono text-xs text-muted-foreground">
+                            P{q.position}
+                          </span>
+                          {qDriver ? (
+                            <Link
+                              href={`/drivers/${qDriver.driverId}`}
+                              className="flex items-center gap-3 transition-colors hover:text-racing-red"
+                            >
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {q.driverCode}
+                              </span>
+                              <span className="text-foreground">
+                                {q.driverName}
+                              </span>
+                            </Link>
+                          ) : (
+                            <>
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {q.driverCode}
+                              </span>
+                              <span className="text-foreground">
+                                {q.driverName}
+                              </span>
+                            </>
+                          )}
                         </span>
                         <span className="font-mono text-xs text-muted-foreground">
-                          {q.driverCode}
+                          {q.position === 1
+                            ? q.fastestLapTime
+                            : `+${q.gapToPoleSecs.toFixed(3)}`}
                         </span>
-                        <span className="text-foreground">{q.driverName}</span>
-                      </span>
-                      <span className="font-mono text-xs text-muted-foreground">
-                        {q.position === 1
-                          ? q.fastestLapTime
-                          : `+${q.gapToPoleSecs.toFixed(3)}`}
-                      </span>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

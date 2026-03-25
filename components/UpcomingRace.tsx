@@ -1,6 +1,7 @@
 import Link from "next/link";
 import type { UpcomingRaceData } from "@/lib/upcoming-race";
 import { CIRCUIT_MAP } from "@/lib/circuits";
+import { getDriverMeta } from "@/lib/drivers";
 import { OddsWidget } from "@/components/briefing/OddsWidget";
 import { RaceCountdown } from "@/components/RaceCountdown";
 
@@ -81,33 +82,45 @@ export function UpcomingRace({ data }: UpcomingRaceProps) {
                   </span>
                 </div>
                 <div className="space-y-2">
-                  {driverStandings.slice(0, 10).map((d) => (
-                    <div
-                      key={d.driverId}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="w-5 text-right font-mono text-xs text-muted-foreground">
-                          {d.position}
+                  {driverStandings.slice(0, 10).map((d) => {
+                    const dMeta = getDriverMeta(d.driverId);
+                    return (
+                      <div
+                        key={d.driverId}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className="w-5 text-right font-mono text-xs text-muted-foreground">
+                            {d.position}
+                          </span>
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {d.code}
+                          </span>
+                          {dMeta ? (
+                            <Link
+                              href={`/drivers/${dMeta.driverId}`}
+                              className="text-foreground transition-colors hover:text-racing-red"
+                            >
+                              {d.givenName} {d.familyName}
+                            </Link>
+                          ) : (
+                            <span className="text-foreground">
+                              {d.givenName} {d.familyName}
+                            </span>
+                          )}
+                          <span className="text-xs text-muted-foreground">
+                            {d.constructorName}
+                          </span>
                         </span>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {d.code}
+                        <span className="font-mono text-sm font-medium text-foreground">
+                          {d.points}
+                          <span className="ml-0.5 text-xs text-muted-foreground">
+                            pts
+                          </span>
                         </span>
-                        <span className="text-foreground">
-                          {d.givenName} {d.familyName}
-                        </span>
-                        <span className="text-xs text-muted-foreground">
-                          {d.constructorName}
-                        </span>
-                      </span>
-                      <span className="font-mono text-sm font-medium text-foreground">
-                        {d.points}
-                        <span className="ml-0.5 text-xs text-muted-foreground">
-                          pts
-                        </span>
-                      </span>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

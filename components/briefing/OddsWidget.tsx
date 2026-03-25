@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { DriverOdds } from "@/types";
+import { getDriverByCode } from "@/lib/drivers";
 
 interface OddsWidgetProps {
   raceWinner: DriverOdds[];
@@ -34,6 +36,7 @@ export function OddsWidget({ raceWinner }: OddsWidgetProps) {
         {raceWinner.slice(0, 10).map((driver, i) => {
           const pct = Math.round(driver.impliedProbability * 100);
           const barWidth = (driver.impliedProbability / maxProb) * 100;
+          const driverMeta = getDriverByCode(driver.driverCode);
 
           return (
             <div key={driver.driverName} className="space-y-1">
@@ -42,10 +45,28 @@ export function OddsWidget({ raceWinner }: OddsWidgetProps) {
                   <span className="w-5 text-right text-xs text-muted-foreground">
                     {i + 1}
                   </span>
-                  <span className="font-mono text-xs text-muted-foreground">
-                    {driver.driverCode}
-                  </span>
-                  <span className="text-foreground">{driver.driverName}</span>
+                  {driverMeta ? (
+                    <Link
+                      href={`/drivers/${driverMeta.driverId}`}
+                      className="flex items-center gap-2 transition-colors hover:text-racing-red"
+                    >
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {driver.driverCode}
+                      </span>
+                      <span className="text-foreground">
+                        {driver.driverName}
+                      </span>
+                    </Link>
+                  ) : (
+                    <>
+                      <span className="font-mono text-xs text-muted-foreground">
+                        {driver.driverCode}
+                      </span>
+                      <span className="text-foreground">
+                        {driver.driverName}
+                      </span>
+                    </>
+                  )}
                 </span>
                 <span className="font-mono text-sm font-medium text-foreground">
                   {pct}%
