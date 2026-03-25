@@ -10,6 +10,10 @@ import { ShareCard } from "@/components/briefing/ShareCard";
 import { RaceCountdown } from "@/components/RaceCountdown";
 import { ArchiveCard } from "@/components/ArchiveCard";
 import { UpcomingRace } from "@/components/UpcomingRace";
+import { DataTicker, type TickerItem } from "@/components/home/DataTicker";
+import { HeroTitle } from "@/components/home/HeroTitle";
+import { ExplainerGrid } from "@/components/home/ExplainerGrid";
+import { RacingStripe } from "@/components/home/RacingStripe";
 import {
   buildEventSlug,
   fetchOddsHistoryBySlug,
@@ -105,45 +109,75 @@ export default async function HomePage() {
     previewOddsHistory = await getHomeOddsHistory(previewPmSlug).catch(() => []);
   }
 
+  // Assemble ticker data from upcoming race
+  const tickerItems: TickerItem[] = [];
+  if (upcoming) {
+    upcoming.odds.raceWinner.slice(0, 5).forEach((d) => {
+      tickerItems.push({
+        label: d.driverCode,
+        value: `${Math.round(d.impliedProbability * 100)}%`,
+        trend: d.impliedProbability > 0.15 ? "up" : "neutral",
+      });
+    });
+    if (upcoming.driverStandings[0]) {
+      const leader = upcoming.driverStandings[0];
+      tickerItems.push({
+        label: "WDC LEADER",
+        value: `${leader.code} ${leader.points}pts`,
+        trend: "up",
+      });
+    }
+    if (upcoming.constructorStandings[0]) {
+      const leader = upcoming.constructorStandings[0];
+      tickerItems.push({
+        label: "WCC LEADER",
+        value: `${leader.constructorName} ${leader.points}pts`,
+      });
+    }
+    if (upcoming.weather) {
+      tickerItems.push({
+        label: "RACE TEMP",
+        value: `${Math.round(upcoming.weather.maxTempC)}\u00B0C`,
+      });
+      tickerItems.push({
+        label: "RAIN",
+        value: `${upcoming.weather.precipitationProbability}%`,
+        trend: upcoming.weather.precipitationProbability > 40 ? "up" : "down",
+      });
+    }
+    tickerItems.push({
+      label: "NEXT GP",
+      value: upcoming.meeting.meeting_name.toUpperCase(),
+    });
+  }
+
   return (
     <>
       {/* Marketing hero */}
-      <section className="relative overflow-hidden border-b border-border/40">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-racing-red/8 via-background to-background" />
-        <div className="relative mx-auto max-w-7xl px-4 pt-16 pb-12 md:pt-24 md:pb-16">
-          <h1 className="font-heading text-5xl tracking-wide text-foreground md:text-7xl lg:text-8xl">
-            GRID TO GREEN
-          </h1>
-          <div className="mt-2 h-1 w-20 bg-racing-red" />
-          <p className="mt-6 max-w-2xl text-lg leading-relaxed text-muted-foreground md:text-xl">
-            The smartest F1 race preview on the internet. Before every Grand
-            Prix, our AI analyst synthesizes live{" "}
-            <span className="text-foreground">prediction market odds</span>,{" "}
-            <span className="text-foreground">qualifying telemetry</span>,{" "}
-            <span className="text-foreground">historical circuit data</span>,
-            and{" "}
-            <span className="text-foreground">weather forecasts</span>{" "}
-            into one opinionated briefing you can read in five minutes.
-          </p>
-          <div className="mt-8 flex flex-wrap items-center gap-3 text-sm">
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-1.5 text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-racing-red" />
-              Polymarket Odds
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-1.5 text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-racing-red" />
-              OpenF1 Telemetry
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-1.5 text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-racing-red" />
-              Circuit History
-            </span>
-            <span className="inline-flex items-center gap-2 rounded-full border border-border/60 bg-card px-4 py-1.5 text-muted-foreground">
-              <span className="h-1.5 w-1.5 rounded-full bg-racing-red" />
-              Weather Forecasts
-            </span>
-          </div>
+      <section className="relative overflow-hidden">
+        {/* Layered background */}
+        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top_right,_var(--tw-gradient-stops))] from-racing-red/10 via-background to-background" />
+        <div className="hero-grid-overlay absolute inset-0" />
+        <div className="scanline-overlay absolute inset-0" />
+        {/* Ambient glow */}
+        <div
+          className="absolute -right-32 -top-32 h-96 w-96 rounded-full bg-racing-red/5 blur-[128px]"
+          style={{ animation: "hero-glow 8s ease-in-out infinite" }}
+        />
+
+        {/* Data ticker */}
+        <div className="relative">
+          <DataTicker items={tickerItems} />
         </div>
+
+        {/* Hero content */}
+        <div className="relative mx-auto max-w-7xl px-4 pt-12 pb-10 md:pt-20 md:pb-14">
+          <HeroTitle />
+          <ExplainerGrid />
+        </div>
+
+        {/* Bottom racing stripe */}
+        <RacingStripe variant="bold" />
       </section>
 
       {/* If the latest full briefing is for the upcoming race, show it inline */}
@@ -280,11 +314,17 @@ export default async function HomePage() {
       {!briefingIsForUpcoming && !upcoming && !upcomingPreview && !briefing && (
         <div className="flex flex-1 flex-col items-center justify-center px-4 py-24">
           <div className="text-center">
-            <h1 className="font-heading text-5xl tracking-wide text-foreground md:text-7xl">
-              GRID TO GREEN
+            <h1 className="font-heading text-6xl tracking-wider text-foreground md:text-8xl">
+              GRID TO <span className="text-terminal-green">GREEN</span>
             </h1>
-            <div className="mx-auto mt-2 h-1 w-16 bg-racing-red" />
-            <p className="mt-6 max-w-md text-lg text-muted-foreground">
+            <div
+              className="mx-auto mt-3 h-0.5 w-20 origin-center bg-racing-red"
+              style={{ animation: "stripe-extend 0.8s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}
+            />
+            <p className="mt-6 font-mono text-[10px] uppercase tracking-[0.2em] text-muted-foreground/50">
+              SYS:STANDBY // AWAITING RACE DATA
+            </p>
+            <p className="mt-4 max-w-md text-sm text-muted-foreground">
               AI-powered race briefings that synthesize prediction markets,
               qualifying telemetry, and circuit history into one smart preview.
             </p>
@@ -294,11 +334,16 @@ export default async function HomePage() {
 
       {/* Latest full briefing card (when not shown inline above) */}
       {!briefingIsForUpcoming && briefing && (
-        <section className="border-t border-border/40">
+        <section className="border-t border-border/30">
           <div className="mx-auto max-w-7xl px-4 py-12">
-            <h2 className="mb-6 font-heading text-2xl tracking-wide text-foreground">
-              LATEST BRIEFING
-            </h2>
+            <div className="mb-6 flex items-center gap-3">
+              <h2 className="font-heading text-2xl tracking-wide text-foreground">
+                LATEST BRIEFING
+              </h2>
+              <span className="font-mono text-[10px] tracking-wider text-muted-foreground/40">
+                //&nbsp;MOST_RECENT
+              </span>
+            </div>
             <ArchiveCard
               meta={{
                 slug: briefing.slug,
@@ -317,11 +362,16 @@ export default async function HomePage() {
 
       {/* Past briefings */}
       {pastBriefings.length > 0 && (
-        <section className="border-t border-border/40">
+        <section className="border-t border-border/30">
           <div className="mx-auto max-w-7xl px-4 py-12">
-            <h2 className="mb-6 font-heading text-2xl tracking-wide text-foreground">
-              PAST BRIEFINGS
-            </h2>
+            <div className="mb-6 flex items-center gap-3">
+              <h2 className="font-heading text-2xl tracking-wide text-foreground">
+                PAST BRIEFINGS
+              </h2>
+              <span className="font-mono text-[10px] tracking-wider text-muted-foreground/40">
+                //&nbsp;ARCHIVE
+              </span>
+            </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {pastBriefings
                 .filter((m) => m.slug !== briefing?.slug)
@@ -336,11 +386,16 @@ export default async function HomePage() {
 
       {/* Preview briefings */}
       {previewBriefings.length > 0 && (
-        <section className="border-t border-border/40">
+        <section className="border-t border-border/30">
           <div className="mx-auto max-w-7xl px-4 py-12">
-            <h2 className="mb-6 font-heading text-2xl tracking-wide text-foreground">
-              PREVIEW BRIEFINGS
-            </h2>
+            <div className="mb-6 flex items-center gap-3">
+              <h2 className="font-heading text-2xl tracking-wide text-foreground">
+                PREVIEW BRIEFINGS
+              </h2>
+              <span className="font-mono text-[10px] tracking-wider text-muted-foreground/40">
+                //&nbsp;UPCOMING
+              </span>
+            </div>
             <div className="grid grid-cols-1 gap-6 md:grid-cols-2 lg:grid-cols-3">
               {previewBriefings.slice(0, 6).map((meta) => (
                 <ArchiveCard key={meta.slug} meta={meta} showPreviewBadge />

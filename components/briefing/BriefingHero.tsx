@@ -14,30 +14,36 @@ export function BriefingHero({ briefing }: BriefingHeroProps) {
   });
 
   return (
-    <section className="relative overflow-hidden border-b border-border/40">
+    <section className="relative overflow-hidden border-b border-border/30">
       {/* Gradient background */}
-      <div className="absolute inset-0 bg-gradient-to-b from-racing-red/10 via-background to-background" />
+      <div className="absolute inset-0 bg-gradient-to-b from-racing-red/8 via-background to-background" />
+      <div className="scanline-overlay absolute inset-0" />
 
       <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-12 md:pt-16">
-        {/* Race info */}
+        {/* Race info bar */}
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span className="inline-flex items-center rounded-full bg-racing-red/10 px-3 py-1 text-xs font-medium text-racing-red">
-            RACE BRIEFING
+          <span className="inline-flex items-center gap-1.5 rounded bg-racing-red/10 px-3 py-1 text-xs font-medium text-racing-red">
+            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-racing-red" />
+            {briefing.briefingType === "preview" ? "PREVIEW" : "RACE BRIEFING"}
           </span>
-          <span>{briefing.circuit}</span>
-          <span className="text-border">|</span>
-          <span>
+          <span className="font-mono text-xs">{briefing.circuit}</span>
+          <span className="text-border/40">|</span>
+          <span className="font-mono text-xs">
             {briefing.location}, {briefing.country}
           </span>
         </div>
 
         {/* Race name */}
-        <h1 className="mt-4 font-heading text-4xl tracking-wide text-foreground md:text-6xl lg:text-7xl">
+        <h1 className="mt-4 font-heading text-5xl tracking-wide text-foreground md:text-7xl lg:text-8xl">
           {briefing.raceName}
         </h1>
+        <div
+          className="mt-2 h-0.5 w-20 origin-left bg-racing-red md:w-28"
+          style={{ animation: "stripe-extend 0.6s cubic-bezier(0.16, 1, 0.3, 1) forwards" }}
+        />
 
         {/* Date */}
-        <p className="mt-2 text-sm text-muted-foreground">{formattedDate}</p>
+        <p className="mt-3 font-mono text-xs text-muted-foreground/60">{formattedDate}</p>
 
         {/* Headline */}
         <p className="mt-6 max-w-3xl text-xl font-medium leading-relaxed text-foreground md:text-2xl">
@@ -50,13 +56,17 @@ export function BriefingHero({ briefing }: BriefingHeroProps) {
         </p>
 
         {/* Key Number */}
-        <div className="mt-8 inline-flex flex-col rounded-lg border border-border/60 bg-card p-6">
-          <span className="font-heading text-5xl tracking-wide text-racing-red md:text-6xl">
-            {briefing.keyNumber.value}
-          </span>
-          <span className="mt-1 text-sm text-muted-foreground">
-            {briefing.keyNumber.label}
-          </span>
+        <div className="mt-8 inline-flex flex-col overflow-hidden rounded-lg border border-border/40 bg-card">
+          <div className="bg-racing-red/5 px-6 pt-5 pb-4">
+            <span className="font-heading text-5xl tracking-wide text-racing-red md:text-6xl">
+              {briefing.keyNumber.value}
+            </span>
+          </div>
+          <div className="border-t border-border/30 px-6 py-2.5">
+            <span className="font-mono text-[10px] uppercase tracking-wider text-muted-foreground/60">
+              {briefing.keyNumber.label}
+            </span>
+          </div>
         </div>
       </div>
     </section>

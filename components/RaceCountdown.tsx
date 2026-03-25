@@ -58,20 +58,28 @@ export function RaceCountdown({ raceDate, raceStartTime }: RaceCountdownProps) {
   ];
 
   return (
-    <div className="mx-auto max-w-7xl px-4 py-4">
-      <div className="flex items-center gap-4">
-        <span className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
-          Lights Out In
-        </span>
-        <div className="flex items-center gap-3">
-          {units.map((unit) => (
-            <div key={unit.label} className="flex items-baseline gap-1">
-              <span className="font-heading text-2xl tabular-nums text-foreground">
-                {String(unit.value).padStart(2, "0")}
-              </span>
-              <span className="text-[10px] text-muted-foreground">
-                {unit.label}
-              </span>
+    <div className="mx-auto max-w-7xl px-4 py-5">
+      <div className="flex items-center gap-5">
+        <div className="flex items-center gap-2">
+          <span className="h-2 w-2 animate-pulse rounded-full bg-racing-red" />
+          <span className="font-mono text-[10px] font-medium uppercase tracking-widest text-muted-foreground">
+            Lights Out
+          </span>
+        </div>
+        <div className="flex items-center gap-1">
+          {units.map((unit, i) => (
+            <div key={unit.label} className="flex items-center gap-1">
+              <div className="flex flex-col items-center rounded border border-border/40 bg-card/80 px-3 py-1.5">
+                <span className="font-heading text-2xl tabular-nums leading-none text-foreground md:text-3xl">
+                  {String(unit.value).padStart(2, "0")}
+                </span>
+                <span className="mt-0.5 font-mono text-[8px] tracking-wider text-muted-foreground/60">
+                  {unit.label}
+                </span>
+              </div>
+              {i < units.length - 1 && (
+                <span className="px-0.5 font-heading text-lg text-muted-foreground/30">:</span>
+              )}
             </div>
           ))}
         </div>
