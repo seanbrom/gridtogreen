@@ -3,6 +3,8 @@ import { revalidateTag } from "next/cache";
 import { generateFullBriefing } from "@/lib/briefing-pipeline";
 import { fetchAllMeetings } from "@/lib/openf1";
 
+export const maxDuration = 300;
+
 export async function POST(request: NextRequest) {
   const authHeader = request.headers.get("authorization");
   if (authHeader !== `Bearer ${process.env.CRON_SECRET}`) {

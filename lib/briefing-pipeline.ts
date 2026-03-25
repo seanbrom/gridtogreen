@@ -327,7 +327,7 @@ export async function generatePreviewBriefing(
 /**
  * Generate preview briefings for all upcoming races that don't have a full briefing.
  */
-export async function generateAllPreviews(): Promise<{
+export async function generateAllPreviews(limit?: number): Promise<{
   generated: string[];
   skipped: string[];
   failed: string[];
@@ -340,6 +340,8 @@ export async function generateAllPreviews(): Promise<{
   const failed: string[] = [];
 
   for (const meeting of meetings) {
+    if (limit && generated.length >= limit) break;
+
     const slug = slugify(
       `${meeting.year}-${meeting.meeting_name.replace(/\d{4}\s*/g, "")}`
     );
