@@ -3,7 +3,7 @@ const PANELS = [
     sys: "POLYMARKET",
     title: "Prediction Markets",
     description:
-      "Real-time race winner probabilities and head-to-head matchup odds from the world's largest prediction market.",
+      "Where the money is. Real-time winner probabilities and matchup odds from Polymarket.",
     stat: "LIVE",
     live: true,
     hideOnMobile: true,
@@ -12,7 +12,7 @@ const PANELS = [
     sys: "OPENF1",
     title: "Qualifying Telemetry",
     description:
-      "Sector times, tyre compound data, and session conditions pulled direct from the FIA live timing feed.",
+      "Saturday's truth. Sector splits, tyre data, and session conditions straight from FIA live timing.",
     stat: "0.001s",
     live: false,
     hideOnMobile: false,
@@ -21,7 +21,7 @@ const PANELS = [
     sys: "CIRCUIT_DB",
     title: "Circuit History",
     description:
-      "Five years of historical results, dominant teams, safety car frequency, and grid-to-finish conversion rates.",
+      "What this track actually does. Five years of results, safety car rates, and how the grid reshuffles.",
     stat: "5 YRS",
     live: false,
     hideOnMobile: false,
@@ -30,7 +30,7 @@ const PANELS = [
     sys: "WEATHER",
     title: "Race Day Forecast",
     description:
-      "Temperature, precipitation probability, and wind conditions forecast for the exact circuit location.",
+      "The variable nobody prices correctly. Pinpoint forecast for the circuit, not the city.",
     stat: "72 HR",
     live: false,
     hideOnMobile: false,

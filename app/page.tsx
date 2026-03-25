@@ -245,7 +245,7 @@ export default async function HomePage() {
                 <span className="font-medium text-foreground">
                   Preview briefing
                 </span>{" "}
-                — will be updated with qualifying data and weather after
+                Updated with qualifying data and weather after
                 Saturday&apos;s session.
               </p>
             </div>
@@ -325,8 +325,8 @@ export default async function HomePage() {
               SYS:STANDBY // AWAITING RACE DATA
             </p>
             <p className="mt-4 max-w-md text-sm text-muted-foreground">
-              AI-powered race briefings that synthesize prediction markets,
-              qualifying telemetry, and circuit history into one smart preview.
+              One briefing per race. Four data sources. An actual opinion
+              on who wins and why.
             </p>
           </div>
         </div>

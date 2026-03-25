@@ -42,8 +42,8 @@ export function UpcomingRace({ data }: UpcomingRaceProps) {
           <p className="mt-2 text-sm text-muted-foreground">{formattedDate}</p>
 
           <p className="mt-6 max-w-2xl text-lg text-muted-foreground">
-            The briefing generates automatically after qualifying. In the
-            meantime, here&apos;s what we know heading into the weekend.
+            Full briefing publishes after qualifying. Here&apos;s what the
+            data says heading into the weekend.
           </p>
         </div>
       </section>

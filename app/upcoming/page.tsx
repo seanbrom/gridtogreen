@@ -36,8 +36,8 @@ export default async function UpcomingPage() {
           UPCOMING RACES
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Early previews for every race on the calendar. Updated with
-          qualifying data and weather after Saturday&apos;s session.
+          Early reads on every race left on the calendar. Full briefings
+          publish after qualifying.
         </p>
       </div>
 

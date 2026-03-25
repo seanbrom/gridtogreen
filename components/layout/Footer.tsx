@@ -7,7 +7,7 @@ export function Footer() {
             GRID TO GREEN
           </span>
           <span className="h-3 w-0.5 bg-racing-red" />
-          <span>AI-powered race briefings</span>
+          <span>Pre-race briefings for every Grand Prix</span>
         </div>
         <div className="flex flex-col items-center gap-1 md:items-end">
           <p>

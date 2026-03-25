@@ -25,15 +25,15 @@ const bebasNeue = localFont({
 
 export const metadata: Metadata = {
   title: {
-    default: "Grid to Green | AI-Powered F1 Race Briefings",
+    default: "Grid to Green | Pre-Race Briefings for Every Grand Prix",
     template: "%s | Grid to Green",
   },
   description:
-    "AI-generated Formula 1 race previews synthesizing prediction markets, qualifying telemetry, historical data, and weather forecasts.",
+    "Opinionated F1 race briefings built from prediction market odds, qualifying telemetry, circuit history, and weather. Published before every Grand Prix.",
   metadataBase: new URL(getBaseUrl()),
   openGraph: {
     title: "Grid to Green",
-    description: "The smartest F1 race preview on the internet.",
+    description: "One briefing per race. Four data sources. An actual opinion.",
     type: "website",
   },
   twitter: {
@@ -47,7 +47,7 @@ const websiteJsonLd = JSON.stringify({
   name: "Grid to Green",
   url: getBaseUrl(),
   description:
-    "AI-generated Formula 1 race previews synthesizing prediction markets, qualifying telemetry, historical data, and weather forecasts.",
+    "Opinionated F1 race briefings built from prediction market odds, qualifying telemetry, circuit history, and weather. Published before every Grand Prix.",
 });
 
 export default function RootLayout({

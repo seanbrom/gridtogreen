@@ -6,7 +6,7 @@ import { ArchiveCard } from "@/components/ArchiveCard";
 export const metadata: Metadata = {
   title: "F1 Race Briefing Archive",
   description:
-    "Browse all AI-generated Formula 1 race briefings — previews powered by prediction markets, qualifying telemetry, and circuit history.",
+    "Every F1 race briefing we've published. Prediction markets, telemetry, circuit history, and weather in one opinionated preview.",
 };
 
 async function getArchiveData() {
@@ -32,7 +32,7 @@ export default async function ArchivePage() {
           RACE BRIEFINGS
         </h1>
         <p className="mt-2 text-muted-foreground">
-          Every AI-generated race preview, from the latest to the first.
+          Every briefing we&apos;ve published, newest first.
         </p>
       </div>
 

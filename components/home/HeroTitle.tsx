@@ -20,7 +20,7 @@ export function HeroTitle() {
         <span className="text-border">:</span>
         GRID_TO_GREEN{" "}
         <span className="text-border">//</span>{" "}
-        AI-POWERED F1 INTELLIGENCE
+        YOUR PRE-RACE BRIEFING // EVERY GP
         <span
           className="ml-1 inline-block h-3 w-1.5 bg-racing-red/80 align-middle"
           style={{ animation: "cursor-blink 1s step-end infinite" }}
@@ -29,13 +29,13 @@ export function HeroTitle() {
 
       {/* Explainer text */}
       <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-        Before every Grand Prix, our AI analyst synthesizes{" "}
-        <span className="text-foreground">prediction market odds</span>,{" "}
-        <span className="text-foreground">qualifying telemetry</span>,{" "}
-        <span className="text-foreground">historical circuit data</span>,
+        The pre-race read for anyone who wants more than gut feelings.{" "}
+        <span className="text-foreground">Prediction markets</span>,{" "}
+        <span className="text-foreground">telemetry</span>,{" "}
+        <span className="text-foreground">five years of circuit data</span>,
         and{" "}
-        <span className="text-foreground">weather forecasts</span>{" "}
-        into one opinionated briefing.
+        <span className="text-foreground">weather</span>.
+        Synthesized into a briefing that takes a side.
       </p>
     </div>
   );
