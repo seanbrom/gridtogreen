@@ -137,6 +137,55 @@ export async function fetchCircuitHistory(
   return results.sort((a, b) => b.season - a.season || a.position - b.position);
 }
 
+export interface ConstructorSeasonResult {
+  round: number;
+  raceName: string;
+  circuitId: string;
+  results: {
+    position: number;
+    grid: number;
+    points: number;
+    laps: number;
+    status: string;
+    driverId: string;
+    driverCode: string;
+    driverName: string;
+    time: string | null;
+  }[];
+}
+
+export async function fetchConstructorSeasonResults(
+  constructorId: string,
+  season: string = "current"
+): Promise<ConstructorSeasonResult[]> {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const data = await fetchWithRetry<any>(
+    `${BASE_URL}/${season}/constructors/${constructorId}/results.json?limit=200`
+  );
+
+  const races = data?.MRData?.RaceTable?.Races;
+  if (!Array.isArray(races)) return [];
+
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return races.map((race: any) => ({
+    round: parseInt(race.round, 10),
+    raceName: race.raceName as string,
+    circuitId: race.Circuit?.circuitId ?? "",
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    results: (race.Results ?? []).map((r: any) => ({
+      position: parseInt(r.position, 10),
+      grid: parseInt(r.grid, 10),
+      points: parseFloat(r.points),
+      laps: parseInt(r.laps, 10),
+      status: r.status,
+      driverId: r.Driver?.driverId ?? "",
+      driverCode: r.Driver?.code ?? "",
+      driverName: `${r.Driver?.givenName ?? ""} ${r.Driver?.familyName ?? ""}`.trim(),
+      time: r.Time?.time ?? null,
+    })),
+  }));
+}
+
 export interface DriverSeasonResult {
   round: number;
   raceName: string;
@@ -163,14 +212,14 @@ export async function fetchDriverSeasonResults(
   const races = data?.MRData?.RaceTable?.Races;
   if (!Array.isArray(races)) return [];
 
-  return races.map((race: Record<string, unknown>) => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const result = (race as any).Results?.[0];
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  return races.map((race: any) => {
+    const result = race.Results?.[0];
     if (!result) return null;
     return {
-      round: parseInt(race.round as string, 10),
+      round: parseInt(race.round, 10),
       raceName: race.raceName as string,
-      circuitId: (race as Record<string, Record<string, string>>).Circuit?.circuitId ?? "",
+      circuitId: race.Circuit?.circuitId ?? "",
       position: parseInt(result.position, 10),
       grid: parseInt(result.grid, 10),
       points: parseFloat(result.points),

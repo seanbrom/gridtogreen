@@ -2,6 +2,7 @@ import Link from "next/link";
 import type { UpcomingRaceData } from "@/lib/upcoming-race";
 import { CIRCUIT_MAP } from "@/lib/circuits";
 import { getDriverMeta } from "@/lib/drivers";
+import { getTeamByName } from "@/lib/teams";
 import { OddsWidget } from "@/components/briefing/OddsWidget";
 import { RaceCountdown } from "@/components/RaceCountdown";
 
@@ -108,9 +109,18 @@ export function UpcomingRace({ data }: UpcomingRaceProps) {
                               {d.givenName} {d.familyName}
                             </span>
                           )}
-                          <span className="text-xs text-muted-foreground">
-                            {d.constructorName}
-                          </span>
+                          {(() => {
+                            const tMeta = getTeamByName(d.constructorName);
+                            return tMeta ? (
+                              <Link href={`/teams/${tMeta.teamId}`} className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+                                {d.constructorName}
+                              </Link>
+                            ) : (
+                              <span className="text-xs text-muted-foreground">
+                                {d.constructorName}
+                              </span>
+                            );
+                          })()}
                         </span>
                         <span className="font-mono text-sm font-medium text-foreground">
                           {d.points}
@@ -135,27 +145,36 @@ export function UpcomingRace({ data }: UpcomingRaceProps) {
                   </span>
                 </div>
                 <div className="space-y-2">
-                  {constructorStandings.slice(0, 10).map((c) => (
-                    <div
-                      key={c.constructorId}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <span className="flex items-center gap-3">
-                        <span className="w-5 text-right font-mono text-xs text-muted-foreground">
-                          {c.position}
+                  {constructorStandings.slice(0, 10).map((c) => {
+                    const cTeam = getTeamByName(c.constructorName);
+                    return (
+                      <div
+                        key={c.constructorId}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className="w-5 text-right font-mono text-xs text-muted-foreground">
+                            {c.position}
+                          </span>
+                          {cTeam ? (
+                            <Link href={`/teams/${cTeam.teamId}`} className="text-foreground transition-colors hover:text-racing-red">
+                              {c.constructorName}
+                            </Link>
+                          ) : (
+                            <span className="text-foreground">
+                              {c.constructorName}
+                            </span>
+                          )}
                         </span>
-                        <span className="text-foreground">
-                          {c.constructorName}
+                        <span className="font-mono text-sm font-medium text-foreground">
+                          {c.points}
+                          <span className="ml-0.5 text-xs text-muted-foreground">
+                            pts
+                          </span>
                         </span>
-                      </span>
-                      <span className="font-mono text-sm font-medium text-foreground">
-                        {c.points}
-                        <span className="ml-0.5 text-xs text-muted-foreground">
-                          pts
-                        </span>
-                      </span>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}
@@ -170,25 +189,34 @@ export function UpcomingRace({ data }: UpcomingRaceProps) {
                   </span>
                 </div>
                 <div className="space-y-2">
-                  {recentWinners.map((w) => (
-                    <div
-                      key={w.season}
-                      className="flex items-center justify-between text-sm"
-                    >
-                      <span className="flex items-center gap-3">
+                  {recentWinners.map((w) => {
+                    const wTeam = getTeamByName(w.constructorName);
+                    return (
+                      <div
+                        key={w.season}
+                        className="flex items-center justify-between text-sm"
+                      >
+                        <span className="flex items-center gap-3">
+                          <span className="font-mono text-xs text-muted-foreground">
+                            {w.season}
+                          </span>
+                          <span className="text-foreground">{w.driverName}</span>
+                          {wTeam ? (
+                            <Link href={`/teams/${wTeam.teamId}`} className="text-xs text-muted-foreground transition-colors hover:text-foreground">
+                              {w.constructorName}
+                            </Link>
+                          ) : (
+                            <span className="text-xs text-muted-foreground">
+                              {w.constructorName}
+                            </span>
+                          )}
+                        </span>
                         <span className="font-mono text-xs text-muted-foreground">
-                          {w.season}
+                          Started P{w.grid}
                         </span>
-                        <span className="text-foreground">{w.driverName}</span>
-                        <span className="text-xs text-muted-foreground">
-                          {w.constructorName}
-                        </span>
-                      </span>
-                      <span className="font-mono text-xs text-muted-foreground">
-                        Started P{w.grid}
-                      </span>
-                    </div>
-                  ))}
+                      </div>
+                    );
+                  })}
                 </div>
               </div>
             )}

@@ -1,31 +1,3 @@
-// Map OpenF1 circuit_short_name → Jolpica circuitId
-export const CIRCUIT_MAP: Record<string, string> = {
-  Bahrain: "bahrain",
-  Jeddah: "jeddah",
-  Melbourne: "albert_park",
-  Suzuka: "suzuka",
-  Shanghai: "shanghai",
-  Miami: "miami",
-  Imola: "imola",
-  Monaco: "monaco",
-  Barcelona: "catalunya",
-  Montreal: "villeneuve",
-  Spielberg: "red_bull_ring",
-  Silverstone: "silverstone",
-  Budapest: "hungaroring",
-  "Spa-Francorchamps": "spa",
-  Zandvoort: "zandvoort",
-  Monza: "monza",
-  Baku: "baku",
-  Singapore: "marina_bay",
-  Austin: "americas",
-  "Mexico City": "rodriguez",
-  "São Paulo": "interlagos",
-  "Las Vegas": "vegas",
-  Lusail: "losail",
-  "Yas Island": "yas_marina",
-};
-
 // Rich circuit metadata for programmatic circuit pages
 export interface CircuitMeta {
   circuitId: string;
@@ -61,6 +33,15 @@ export const CIRCUITS: CircuitMeta[] = [
   { circuitId: "losail", openF1Name: "Lusail", grandPrixName: "Qatar Grand Prix", country: "Qatar", locality: "Lusail" },
   { circuitId: "yas_marina", openF1Name: "Yas Island", grandPrixName: "Abu Dhabi Grand Prix", country: "UAE", locality: "Abu Dhabi" },
 ];
+
+// Map OpenF1 circuit_short_name → Jolpica circuitId (derived from CIRCUITS)
+export const CIRCUIT_MAP: Record<string, string> = CIRCUITS.reduce(
+  (map, c) => {
+    map[c.openF1Name] = c.circuitId;
+    return map;
+  },
+  {} as Record<string, string>
+);
 
 export function getCircuitMeta(circuitId: string): CircuitMeta | undefined {
   return CIRCUITS.find((c) => c.circuitId === circuitId);

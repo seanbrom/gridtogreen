@@ -5,8 +5,11 @@ import Link from "next/link";
 import { CIRCUITS, getCircuitMeta } from "@/lib/circuits";
 import { fetchCircuitInfo, fetchCircuitHistory } from "@/lib/jolpica";
 import { getAllBriefings } from "@/lib/kv";
+import { getTeamByName } from "@/lib/teams";
 import { ArchiveCard } from "@/components/ArchiveCard";
-import { getBaseUrl } from "@/lib/utils";
+import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
+import { SectionHeading } from "@/components/SectionHeading";
+import { StatCard } from "@/components/StatCard";
 import type { HistoricalRaceResult, BriefingMeta } from "@/types";
 
 // ---------------------------------------------------------------------------
@@ -148,7 +151,15 @@ export default async function CircuitPage({
     meta.grandPrixName
   );
 
-  const baseUrl = getBaseUrl();
+  const tcTeam = stats.topConstructor
+    ? getTeamByName(stats.topConstructor.name)
+    : undefined;
+
+  const breadcrumbItems = [
+    { label: "Home", href: "/" },
+    { label: "Circuits", href: "/circuits" },
+    { label: meta.grandPrixName, href: `/circuits/${meta.circuitId}` },
+  ];
 
   return (
     <>
@@ -178,59 +189,11 @@ export default async function CircuitPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: "Home",
-                item: baseUrl,
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: "Circuits",
-                item: `${baseUrl}/circuits`,
-              },
-              {
-                "@type": "ListItem",
-                position: 3,
-                name: meta.grandPrixName,
-                item: `${baseUrl}/circuits/${meta.circuitId}`,
-              },
-            ],
-          }),
+          __html: JSON.stringify(breadcrumbJsonLd(breadcrumbItems)),
         }}
       />
 
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="mx-auto max-w-7xl px-4 pt-4">
-        <ol className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-          <li>
-            <Link
-              href="/"
-              className="transition-colors hover:text-foreground"
-            >
-              Home
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li>
-            <Link
-              href="/circuits"
-              className="transition-colors hover:text-foreground"
-            >
-              Circuits
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-foreground">
-            {meta.grandPrixName}
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumbs items={breadcrumbItems} />
 
       {/* Hero */}
       <header className="mx-auto max-w-7xl px-4 pt-8 pb-6">
@@ -272,10 +235,19 @@ export default async function CircuitPage({
               />
             )}
             {stats.topConstructor && (
-              <StatCard
-                value={stats.topConstructor.name}
-                label={`Top team (${stats.topConstructor.wins} win${stats.topConstructor.wins === 1 ? "" : "s"})`}
-              />
+              tcTeam ? (
+                <Link href={`/teams/${tcTeam.teamId}`}>
+                  <StatCard
+                    value={stats.topConstructor.name}
+                    label={`Top team (${stats.topConstructor.wins} win${stats.topConstructor.wins === 1 ? "" : "s"})`}
+                  />
+                </Link>
+              ) : (
+                <StatCard
+                  value={stats.topConstructor.name}
+                  label={`Top team (${stats.topConstructor.wins} win${stats.topConstructor.wins === 1 ? "" : "s"})`}
+                />
+              )
             )}
           </div>
         </section>
@@ -305,7 +277,9 @@ export default async function CircuitPage({
                       </tr>
                     </thead>
                     <tbody>
-                      {winners.map((w) => (
+                      {winners.map((w) => {
+                        const wTeam = getTeamByName(w.constructorName);
+                        return (
                         <tr
                           key={w.season}
                           className="border-b border-border/20 transition-colors hover:bg-muted/30"
@@ -321,8 +295,14 @@ export default async function CircuitPage({
                               {w.driverName}
                             </span>
                           </td>
-                          <td className="px-4 py-3 text-muted-foreground">
-                            {w.constructorName}
+                          <td className="px-4 py-3">
+                            {wTeam ? (
+                              <Link href={`/teams/${wTeam.teamId}`} className="text-muted-foreground transition-colors hover:text-foreground">
+                                {w.constructorName}
+                              </Link>
+                            ) : (
+                              <span className="text-muted-foreground">{w.constructorName}</span>
+                            )}
                           </td>
                           <td className="px-4 py-3 text-right font-mono text-xs">
                             <span
@@ -339,7 +319,8 @@ export default async function CircuitPage({
                             {w.laps}
                           </td>
                         </tr>
-                      ))}
+                        );
+                      })}
                     </tbody>
                   </table>
                 </div>
@@ -476,39 +457,5 @@ export default async function CircuitPage({
         </section>
       )}
     </>
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function StatCard({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-lg border border-border/60 bg-card p-4">
-      <div className="font-heading text-3xl text-racing-red">{value}</div>
-      <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/60">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function SectionHeading({
-  title,
-  annotation,
-}: {
-  title: string;
-  annotation: string;
-}) {
-  return (
-    <div className="mb-4 flex items-center gap-3">
-      <h2 className="font-heading text-2xl tracking-wide text-foreground">
-        {title}
-      </h2>
-      <span className="font-mono text-[10px] tracking-wider text-muted-foreground/40">
-        //&nbsp;{annotation}
-      </span>
-    </div>
   );
 }

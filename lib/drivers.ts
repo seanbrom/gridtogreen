@@ -70,6 +70,6 @@ export function getDriverByCode(code: string): DriverMeta | undefined {
   return DRIVERS.find((d) => d.code === code);
 }
 
-export function getTeamDrivers(team: string): DriverMeta[] {
-  return DRIVERS.filter((d) => d.team === team);
+export function getTeamDrivers(teamId: string): DriverMeta[] {
+  return DRIVERS.filter((d) => d.teamId === teamId);
 }

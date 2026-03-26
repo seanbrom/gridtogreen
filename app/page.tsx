@@ -15,12 +15,10 @@ import { HeroTitle } from "@/components/home/HeroTitle";
 import { ExplainerGrid } from "@/components/home/ExplainerGrid";
 import { RacingStripe } from "@/components/home/RacingStripe";
 import {
-  buildEventSlug,
   fetchOddsHistoryBySlug,
   resolvePolymarketSlug,
 } from "@/lib/polymarket";
-import { getDriverByCode } from "@/lib/drivers";
-import Link from "next/link";
+import { QualifyingGrid } from "@/components/briefing/QualifyingGrid";
 
 async function getPageData() {
   "use cache";
@@ -196,57 +194,7 @@ export default async function HomePage() {
               <aside className="space-y-6">
                 <OddsWidget raceWinner={briefing.odds.raceWinner} />
                 <ShareCard slug={briefing.slug} headline={briefing.headline} />
-                {briefing.qualifying.results.length > 0 && (
-                  <div className="rounded-lg border border-border/60 bg-card p-6">
-                    <span className="mb-4 block text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                      Qualifying Grid
-                    </span>
-                    <div className="space-y-2">
-                      {briefing.qualifying.results.slice(0, 10).map((q) => {
-                        const qDriver = getDriverByCode(q.driverCode);
-                        return (
-                          <div
-                            key={q.driverCode}
-                            className="flex items-center justify-between text-sm"
-                          >
-                            <span className="flex items-center gap-3">
-                              <span className="w-5 text-right font-mono text-xs text-muted-foreground">
-                                P{q.position}
-                              </span>
-                              {qDriver ? (
-                                <Link
-                                  href={`/drivers/${qDriver.driverId}`}
-                                  className="flex items-center gap-3 transition-colors hover:text-racing-red"
-                                >
-                                  <span className="font-mono text-xs text-muted-foreground">
-                                    {q.driverCode}
-                                  </span>
-                                  <span className="text-foreground">
-                                    {q.driverName}
-                                  </span>
-                                </Link>
-                              ) : (
-                                <>
-                                  <span className="font-mono text-xs text-muted-foreground">
-                                    {q.driverCode}
-                                  </span>
-                                  <span className="text-foreground">
-                                    {q.driverName}
-                                  </span>
-                                </>
-                              )}
-                            </span>
-                            <span className="font-mono text-xs text-muted-foreground">
-                              {q.position === 1
-                                ? q.fastestLapTime
-                                : `+${q.gapToPoleSecs.toFixed(3)}`}
-                            </span>
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                )}
+                <QualifyingGrid results={briefing.qualifying.results} />
               </aside>
             </div>
           </div>

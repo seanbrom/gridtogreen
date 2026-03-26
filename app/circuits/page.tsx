@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
-import { CIRCUITS } from "@/lib/circuits";
-import { getBaseUrl } from "@/lib/utils";
+import { CIRCUITS, type CircuitMeta } from "@/lib/circuits";
+import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
 
 export const metadata: Metadata = {
   title: "F1 Circuits",
@@ -46,51 +46,21 @@ const REGIONS: { name: string; circuitIds: string[] }[] = [
 ];
 
 export default function CircuitsPage() {
-  const baseUrl = getBaseUrl();
+  const breadcrumbItems = [
+    { label: "Home", href: "/" },
+    { label: "Circuits", href: "/circuits" },
+  ];
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: "Home",
-                item: baseUrl,
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: "Circuits",
-                item: `${baseUrl}/circuits`,
-              },
-            ],
-          }),
+          __html: JSON.stringify(breadcrumbJsonLd(breadcrumbItems)),
         }}
       />
 
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="mx-auto max-w-7xl px-4 pt-4">
-        <ol className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-          <li>
-            <Link
-              href="/"
-              className="transition-colors hover:text-foreground"
-            >
-              Home
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-foreground">
-            Circuits
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumbs items={breadcrumbItems} />
 
       {/* Hero */}
       <header className="mx-auto max-w-7xl px-4 pt-8 pb-10">
@@ -111,7 +81,7 @@ export default function CircuitsPage() {
           {REGIONS.map((region) => {
             const circuits = region.circuitIds
               .map((id) => CIRCUITS.find((c) => c.circuitId === id))
-              .filter(Boolean);
+              .filter((c): c is CircuitMeta => c !== undefined);
 
             return (
               <section key={region.name}>
@@ -126,16 +96,16 @@ export default function CircuitsPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
                   {circuits.map((circuit) => (
                     <Link
-                      key={circuit!.circuitId}
-                      href={`/circuits/${circuit!.circuitId}`}
+                      key={circuit.circuitId}
+                      href={`/circuits/${circuit.circuitId}`}
                       className="group relative block overflow-hidden rounded-lg border border-border/60 bg-card p-5 transition-all hover:border-racing-red/40 hover:shadow-[0_0_24px_rgba(232,0,45,0.08)]"
                     >
                       <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-racing-red via-racing-red/60 to-transparent opacity-60 transition-opacity group-hover:opacity-100" />
                       <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
-                        {circuit!.locality}, {circuit!.country}
+                        {circuit.locality}, {circuit.country}
                       </div>
                       <h3 className="mt-2 font-heading text-2xl tracking-wide text-foreground transition-colors group-hover:text-racing-red">
-                        {circuit!.grandPrixName.replace(" Grand Prix", "")}
+                        {circuit.grandPrixName.replace(" Grand Prix", "")}
                         <span className="text-muted-foreground/30"> GP</span>
                       </h3>
                     </Link>

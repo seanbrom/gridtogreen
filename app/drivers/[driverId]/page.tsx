@@ -10,9 +10,13 @@ import {
 } from "@/lib/jolpica";
 import { getAllBriefings } from "@/lib/kv";
 import { getCircuitMeta } from "@/lib/circuits";
+import { isFinished, positionColor } from "@/lib/race-utils";
 import { ArchiveCard } from "@/components/ArchiveCard";
-import { getBaseUrl } from "@/lib/utils";
-import type { BriefingMeta, DriverStanding } from "@/types";
+import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
+import { PointsBar } from "@/components/PointsBar";
+import { SectionHeading } from "@/components/SectionHeading";
+import { StatCard } from "@/components/StatCard";
+import type { BriefingMeta } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Cached data fetchers
@@ -50,9 +54,7 @@ function computeDriverStats(results: DriverSeasonResult[]) {
   const wins = results.filter((r) => r.position === 1).length;
   const podiums = results.filter((r) => r.position <= 3).length;
   const pointsFinishes = results.filter((r) => r.points > 0).length;
-  const dnfs = results.filter(
-    (r) => r.status !== "Finished" && !r.status.startsWith("+")
-  ).length;
+  const dnfs = results.filter((r) => !isFinished(r.status)).length;
   const totalPoints = results.reduce((sum, r) => sum + r.points, 0);
 
   const gridPositions = results.map((r) => r.grid).filter((g) => g > 0);
@@ -62,7 +64,7 @@ function computeDriverStats(results: DriverSeasonResult[]) {
       : null;
 
   const racePositions = results
-    .filter((r) => r.status === "Finished" || r.status.startsWith("+"))
+    .filter((r) => isFinished(r.status))
     .map((r) => r.position);
   const avgFinish =
     racePositions.length > 0
@@ -70,7 +72,7 @@ function computeDriverStats(results: DriverSeasonResult[]) {
       : null;
 
   const positionsGained = results
-    .filter((r) => r.grid > 0 && (r.status === "Finished" || r.status.startsWith("+")))
+    .filter((r) => r.grid > 0 && isFinished(r.status))
     .reduce((sum, r) => sum + (r.grid - r.position), 0);
 
   return {
@@ -166,7 +168,6 @@ export default async function DriverPage({
     : null;
 
   const fullName = `${meta.firstName} ${meta.lastName}`;
-  const baseUrl = getBaseUrl();
 
   return (
     <>
@@ -189,65 +190,33 @@ export default async function DriverPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: "Home",
-                item: baseUrl,
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: "Drivers",
-                item: `${baseUrl}/drivers`,
-              },
-              {
-                "@type": "ListItem",
-                position: 3,
-                name: fullName,
-                item: `${baseUrl}/drivers/${meta.driverId}`,
-              },
-            ],
-          }),
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { label: "Home" },
+              { label: "Drivers", href: "/drivers" },
+              { label: fullName, href: `/drivers/${meta.driverId}` },
+            ])
+          ),
         }}
       />
 
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="mx-auto max-w-7xl px-4 pt-4">
-        <ol className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-          <li>
-            <Link
-              href="/"
-              className="transition-colors hover:text-foreground"
-            >
-              Home
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li>
-            <Link
-              href="/drivers"
-              className="transition-colors hover:text-foreground"
-            >
-              Drivers
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-foreground">
-            {fullName}
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Drivers", href: "/drivers" },
+          { label: fullName },
+        ]}
+      />
 
       {/* Hero */}
       <header className="mx-auto max-w-7xl px-4 pt-8 pb-6">
         <div className="flex items-center gap-3">
           <span className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
-            #{meta.number} &middot; {meta.team} &middot; {meta.nationality}
+            #{meta.number} &middot;{" "}
+            <Link href={`/teams/${meta.teamId}`} className="transition-colors hover:text-foreground">
+              {meta.team}
+            </Link>
+            {" "}&middot; {meta.nationality}
           </span>
         </div>
         <h1 className="mt-2 font-heading text-5xl tracking-wide text-foreground md:text-7xl">
@@ -315,8 +284,7 @@ export default async function DriverPage({
                       {seasonResults.map((r) => {
                         const circuitMeta = getCircuitMeta(r.circuitId);
                         const gained = r.grid > 0 ? r.grid - r.position : 0;
-                        const isFinished =
-                          r.status === "Finished" || r.status.startsWith("+");
+                        const finished = isFinished(r.status);
 
                         return (
                           <tr
@@ -350,21 +318,13 @@ export default async function DriverPage({
                             </td>
                             <td className="px-4 py-3 text-right font-mono text-xs">
                               <span
-                                className={
-                                  r.position === 1
-                                    ? "text-terminal-amber"
-                                    : r.position <= 3
-                                      ? "text-terminal-green"
-                                      : isFinished
-                                        ? "text-foreground"
-                                        : "text-racing-red"
-                                }
+                                className={positionColor(r.position, finished)}
                               >
-                                {isFinished ? `P${r.position}` : "DNF"}
+                                {finished ? `P${r.position}` : "DNF"}
                               </span>
                             </td>
                             <td className="hidden px-4 py-3 text-right font-mono text-xs sm:table-cell">
-                              {isFinished && r.grid > 0 ? (
+                              {finished && r.grid > 0 ? (
                                 <span
                                   className={
                                     gained > 0
@@ -460,7 +420,11 @@ export default async function DriverPage({
               <dl className="space-y-3 text-sm">
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Team</dt>
-                  <dd className="text-foreground">{meta.team}</dd>
+                  <dd>
+                    <Link href={`/teams/${meta.teamId}`} className="text-foreground transition-colors hover:text-racing-red">
+                      {meta.team}
+                    </Link>
+                  </dd>
                 </div>
                 <div className="flex justify-between">
                   <dt className="text-muted-foreground">Number</dt>
@@ -614,71 +578,3 @@ export default async function DriverPage({
   );
 }
 
-// ---------------------------------------------------------------------------
-// Sub-components
-// ---------------------------------------------------------------------------
-
-function StatCard({ value, label }: { value: string; label: string }) {
-  return (
-    <div className="rounded-lg border border-border/60 bg-card p-4">
-      <div className="font-heading text-3xl text-racing-red">{value}</div>
-      <div className="mt-1 font-mono text-[10px] uppercase tracking-wider text-muted-foreground/60">
-        {label}
-      </div>
-    </div>
-  );
-}
-
-function SectionHeading({
-  title,
-  annotation,
-}: {
-  title: string;
-  annotation: string;
-}) {
-  return (
-    <div className="mb-4 flex items-center gap-3">
-      <h2 className="font-heading text-2xl tracking-wide text-foreground">
-        {title}
-      </h2>
-      <span className="font-mono text-[10px] tracking-wider text-muted-foreground/40">
-        //&nbsp;{annotation}
-      </span>
-    </div>
-  );
-}
-
-function PointsBar({
-  driver1,
-  driver2,
-  points1,
-  points2,
-}: {
-  driver1: string;
-  driver2: string;
-  points1: number;
-  points2: number;
-}) {
-  const total = points1 + points2;
-  const pct1 = total > 0 ? Math.round((points1 / total) * 100) : 50;
-  const pct2 = 100 - pct1;
-
-  return (
-    <div>
-      <div className="flex h-5 w-full overflow-hidden rounded text-[10px] font-medium">
-        <div
-          className="flex items-center justify-center bg-racing-red text-white"
-          style={{ width: `${pct1}%` }}
-        >
-          {pct1 > 20 && `${driver1} ${points1}`}
-        </div>
-        <div
-          className="flex items-center justify-center bg-secondary text-muted-foreground"
-          style={{ width: `${pct2}%` }}
-        >
-          {pct2 > 20 && `${driver2} ${points2}`}
-        </div>
-      </div>
-    </div>
-  );
-}

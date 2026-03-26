@@ -9,16 +9,15 @@ import { BriefingContent } from "@/components/briefing/BriefingContent";
 import { ShareCard } from "@/components/briefing/ShareCard";
 import { RaceCountdown } from "@/components/RaceCountdown";
 import { OddsChart } from "@/components/briefing/OddsChart";
-import { Breadcrumbs } from "@/components/Breadcrumbs";
+import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
+import { QualifyingGrid } from "@/components/briefing/QualifyingGrid";
 import { ArchiveCard } from "@/components/ArchiveCard";
 import {
-  buildEventSlug,
   fetchOddsHistoryBySlug,
   resolvePolymarketSlug,
 } from "@/lib/polymarket";
 import { getBaseUrl } from "@/lib/utils";
 import { findCircuitIdForBriefing, getCircuitMeta } from "@/lib/circuits";
-import { getDriverByCode } from "@/lib/drivers";
 import Link from "next/link";
 
 async function getBriefingData(slug: string) {
@@ -130,6 +129,9 @@ export default async function BriefingPage({
 
   const baseUrl = getBaseUrl();
 
+  const circuitId = findCircuitIdForBriefing(briefing.circuit);
+  const circuitMeta = circuitId ? getCircuitMeta(circuitId) : undefined;
+
   return (
     <>
       <script
@@ -162,33 +164,22 @@ export default async function BriefingPage({
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: "Home",
-                item: baseUrl,
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: "Briefings",
-                item: `${baseUrl}/archive`,
-              },
-              {
-                "@type": "ListItem",
-                position: 3,
-                name: briefing.raceName,
-                item: `${baseUrl}/briefings/${briefing.slug}`,
-              },
-            ],
-          }),
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { label: "Home", href: "/" },
+              { label: "Briefings", href: "/archive" },
+              { label: briefing.raceName, href: `/briefings/${briefing.slug}` },
+            ])
+          ),
         }}
       />
-      <Breadcrumbs raceName={briefing.raceName} />
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Briefings", href: "/archive" },
+          { label: briefing.raceName },
+        ]}
+      />
       <BriefingHero briefing={briefing} />
       <RaceCountdown raceDate={briefing.raceDate} raceStartTime={briefing.raceStartTime} />
 
@@ -238,82 +229,25 @@ export default async function BriefingPage({
             />
             <ShareCard slug={briefing.slug} headline={briefing.headline} />
 
-            {briefing.qualifying.results.length > 0 && (
-              <div className="rounded-lg border border-border/60 bg-card p-6">
-                <span className="mb-4 block text-xs font-medium uppercase tracking-widest text-muted-foreground">
-                  Qualifying Grid
-                </span>
-                <div className="space-y-2">
-                  {briefing.qualifying.results.slice(0, 10).map((q) => {
-                    const qDriver = getDriverByCode(q.driverCode);
-                    return (
-                      <div
-                        key={q.driverCode}
-                        className="flex items-center justify-between text-sm"
-                      >
-                        <span className="flex items-center gap-3">
-                          <span className="w-5 text-right font-mono text-xs text-muted-foreground">
-                            P{q.position}
-                          </span>
-                          {qDriver ? (
-                            <Link
-                              href={`/drivers/${qDriver.driverId}`}
-                              className="flex items-center gap-3 transition-colors hover:text-racing-red"
-                            >
-                              <span className="font-mono text-xs text-muted-foreground">
-                                {q.driverCode}
-                              </span>
-                              <span className="text-foreground">
-                                {q.driverName}
-                              </span>
-                            </Link>
-                          ) : (
-                            <>
-                              <span className="font-mono text-xs text-muted-foreground">
-                                {q.driverCode}
-                              </span>
-                              <span className="text-foreground">
-                                {q.driverName}
-                              </span>
-                            </>
-                          )}
-                        </span>
-                        <span className="font-mono text-xs text-muted-foreground">
-                          {q.position === 1
-                            ? q.fastestLapTime
-                            : `+${q.gapToPoleSecs.toFixed(3)}`}
-                        </span>
-                      </div>
-                    );
-                  })}
-                </div>
-              </div>
-            )}
+            <QualifyingGrid results={briefing.qualifying.results} />
 
             {/* Circuit link */}
-            {(() => {
-              const circuitId = findCircuitIdForBriefing(briefing.circuit);
-              const circuitMeta = circuitId
-                ? getCircuitMeta(circuitId)
-                : undefined;
-              if (!circuitMeta) return null;
-              return (
-                <Link
-                  href={`/circuits/${circuitMeta.circuitId}`}
-                  className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-4 text-sm transition-colors hover:border-racing-red/40"
-                >
-                  <span className="text-racing-red">&rarr;</span>
-                  <div>
-                    <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
-                      Circuit Guide
-                    </div>
-                    <div className="text-foreground">
-                      {circuitMeta.grandPrixName.replace(" Grand Prix", "")} history &amp; stats
-                    </div>
+            {circuitMeta && (
+              <Link
+                href={`/circuits/${circuitMeta.circuitId}`}
+                className="flex items-center gap-3 rounded-lg border border-border/60 bg-card p-4 text-sm transition-colors hover:border-racing-red/40"
+              >
+                <span className="text-racing-red">&rarr;</span>
+                <div>
+                  <div className="font-mono text-[10px] uppercase tracking-widest text-muted-foreground/50">
+                    Circuit Guide
                   </div>
-                </Link>
-              );
-            })()}
+                  <div className="text-foreground">
+                    {circuitMeta.grandPrixName.replace(" Grand Prix", "")} history &amp; stats
+                  </div>
+                </div>
+              </Link>
+            )}
           </aside>
         </div>
       </div>

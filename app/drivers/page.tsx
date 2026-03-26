@@ -3,7 +3,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DRIVERS, TEAMS } from "@/lib/drivers";
 import { fetchDriverStandings } from "@/lib/jolpica";
-import { getBaseUrl } from "@/lib/utils";
+import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
 
 export const metadata: Metadata = {
   title: "F1 Drivers",
@@ -27,51 +27,27 @@ async function getCachedStandings() {
 export default async function DriversPage() {
   const standings = await getCachedStandings();
   const standingsMap = new Map(standings.map((s) => [s.driverId, s]));
-  const baseUrl = getBaseUrl();
 
   return (
     <>
       <script
         type="application/ld+json"
         dangerouslySetInnerHTML={{
-          __html: JSON.stringify({
-            "@context": "https://schema.org",
-            "@type": "BreadcrumbList",
-            itemListElement: [
-              {
-                "@type": "ListItem",
-                position: 1,
-                name: "Home",
-                item: baseUrl,
-              },
-              {
-                "@type": "ListItem",
-                position: 2,
-                name: "Drivers",
-                item: `${baseUrl}/drivers`,
-              },
-            ],
-          }),
+          __html: JSON.stringify(
+            breadcrumbJsonLd([
+              { label: "Home" },
+              { label: "Drivers", href: "/drivers" },
+            ])
+          ),
         }}
       />
 
-      {/* Breadcrumbs */}
-      <nav aria-label="Breadcrumb" className="mx-auto max-w-7xl px-4 pt-4">
-        <ol className="flex items-center gap-1.5 font-mono text-xs text-muted-foreground">
-          <li>
-            <Link
-              href="/"
-              className="transition-colors hover:text-foreground"
-            >
-              Home
-            </Link>
-          </li>
-          <li aria-hidden="true">/</li>
-          <li aria-current="page" className="text-foreground">
-            Drivers
-          </li>
-        </ol>
-      </nav>
+      <Breadcrumbs
+        items={[
+          { label: "Home", href: "/" },
+          { label: "Drivers" },
+        ]}
+      />
 
       {/* Hero */}
       <header className="mx-auto max-w-7xl px-4 pt-8 pb-10">
