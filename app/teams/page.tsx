@@ -4,7 +4,9 @@ import Link from "next/link";
 import { TEAMS_META } from "@/lib/teams";
 import { DRIVERS } from "@/lib/drivers";
 import { fetchConstructorStandings } from "@/lib/jolpica";
+import { fetchConstructorChampionshipHistory } from "@/lib/polymarket";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
+import { ConstructorOddsChart } from "@/components/ConstructorOddsChart";
 
 export const metadata: Metadata = {
   title: "F1 Teams",
@@ -25,9 +27,21 @@ async function getCachedStandings() {
   return fetchConstructorStandings().catch(() => []);
 }
 
+async function getCachedConstructorOddsHistory() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("briefing");
+
+  return fetchConstructorChampionshipHistory(5).catch(() => []);
+}
+
 export default async function TeamsPage() {
-  const standings = await getCachedStandings();
+  const [standings, oddsHistory] = await Promise.all([
+    getCachedStandings(),
+    getCachedConstructorOddsHistory(),
+  ]);
   const standingsMap = new Map(standings.map((s) => [s.constructorId, s]));
+  const oddsMap = new Map(oddsHistory.map((o) => [o.teamId, o]));
 
   // Sort teams by championship position, unranked at the end
   const sortedTeams = [...TEAMS_META].sort((a, b) => {
@@ -64,11 +78,19 @@ export default async function TeamsPage() {
         <div className="mt-4 h-0.5 w-20 bg-racing-red" />
       </header>
 
+      {/* Constructor championship odds chart */}
+      {oddsHistory.length > 0 && (
+        <div className="mx-auto max-w-7xl px-4 pb-8">
+          <ConstructorOddsChart oddsHistory={oddsHistory} />
+        </div>
+      )}
+
       {/* Teams grid */}
       <div className="mx-auto max-w-7xl px-4 pb-16">
         <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3">
           {sortedTeams.map((team) => {
             const s = standingsMap.get(team.teamId);
+            const odds = oddsMap.get(team.teamId);
             const teamDrivers = DRIVERS.filter((d) => d.teamId === team.teamId);
 
             return (
@@ -105,18 +127,23 @@ export default async function TeamsPage() {
                   ))}
                 </div>
 
-                {s && (
-                  <div className="mt-2 flex items-baseline gap-4">
+                <div className="mt-2 flex items-baseline gap-4">
+                  {s && (
                     <span className="font-mono text-xs text-muted-foreground">
                       {s.points} pts
                     </span>
-                    {s.wins > 0 && (
-                      <span className="font-mono text-xs text-terminal-green">
-                        {s.wins} win{s.wins === 1 ? "" : "s"}
-                      </span>
-                    )}
-                  </div>
-                )}
+                  )}
+                  {s && s.wins > 0 && (
+                    <span className="font-mono text-xs text-terminal-green">
+                      {s.wins} win{s.wins === 1 ? "" : "s"}
+                    </span>
+                  )}
+                  {odds && (
+                    <span className="font-mono text-xs text-terminal-amber">
+                      {Math.round(odds.currentProbability * 100)}% WCC
+                    </span>
+                  )}
+                </div>
               </Link>
             );
           })}

@@ -10,10 +10,15 @@ import {
   type ConstructorSeasonResult,
 } from "@/lib/jolpica";
 import { getCircuitMeta } from "@/lib/circuits";
+import {
+  fetchConstructorChampionshipOdds,
+  fetchConstructorChampionshipHistory,
+} from "@/lib/polymarket";
 import { StatCard } from "@/components/StatCard";
 import { SectionHeading } from "@/components/SectionHeading";
 import { PointsBar } from "@/components/PointsBar";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
+import { ConstructorOddsChart } from "@/components/ConstructorOddsChart";
 import { isFinished, positionColor } from "@/lib/race-utils";
 
 // ---------------------------------------------------------------------------
@@ -34,6 +39,22 @@ async function getCachedConstructorResults(constructorId: string) {
   cacheTag("briefing");
 
   return fetchConstructorSeasonResults(constructorId).catch(() => []);
+}
+
+async function getCachedConstructorOdds() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("briefing");
+
+  return fetchConstructorChampionshipOdds().catch(() => []);
+}
+
+async function getCachedConstructorOddsHistory() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("briefing");
+
+  return fetchConstructorChampionshipHistory(5).catch(() => []);
 }
 
 // ---------------------------------------------------------------------------
@@ -140,12 +161,15 @@ export default async function TeamPage({
     notFound();
   }
 
-  const [standings, seasonResults] = await Promise.all([
+  const [standings, seasonResults, allOdds, oddsHistory] = await Promise.all([
     getCachedConstructorStandings(),
     getCachedConstructorResults(teamId),
+    getCachedConstructorOdds(),
+    getCachedConstructorOddsHistory(),
   ]);
 
   const standing = standings.find((s) => s.constructorId === teamId) ?? null;
+  const teamOdds = allOdds.find((o) => o.teamId === teamId) ?? null;
   const stats = computeTeamStats(seasonResults);
   const driverSplits = computeDriverSplits(seasonResults);
   const teamDrivers = DRIVERS.filter((d) => d.teamId === teamId);
@@ -200,12 +224,21 @@ export default async function TeamPage({
         <p className="mt-1 font-mono text-xs text-muted-foreground/60">
           {meta.fullName}
         </p>
-        {standing && (
+        {(standing || teamOdds) && (
           <div className="mt-2 flex items-baseline gap-3">
-            <span className="font-heading text-2xl text-racing-red">P{standing.position}</span>
-            <span className="font-mono text-sm text-muted-foreground">
-              {standing.points} pts &middot; {standing.wins} win{standing.wins === 1 ? "" : "s"}
-            </span>
+            {standing && (
+              <>
+                <span className="font-heading text-2xl text-racing-red">P{standing.position}</span>
+                <span className="font-mono text-sm text-muted-foreground">
+                  {standing.points} pts &middot; {standing.wins} win{standing.wins === 1 ? "" : "s"}
+                </span>
+              </>
+            )}
+            {teamOdds && (
+              <span className="font-mono text-sm text-terminal-amber">
+                {Math.round(teamOdds.impliedProbability * 100)}% WCC odds
+              </span>
+            )}
           </div>
         )}
         <div className="mt-4 h-0.5 w-20 bg-racing-red" />
@@ -228,6 +261,10 @@ export default async function TeamPage({
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="space-y-8 lg:col-span-2">
+            {oddsHistory.length > 0 && (
+              <ConstructorOddsChart oddsHistory={oddsHistory} />
+            )}
+
             {/* Season results table */}
             {seasonResults.length > 0 && (
               <section>
@@ -358,6 +395,14 @@ export default async function TeamPage({
                       <dd className="font-mono text-foreground">{standing.wins}</dd>
                     </div>
                   </>
+                )}
+                {teamOdds && (
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">WCC odds</dt>
+                    <dd className="font-mono text-terminal-amber">
+                      {Math.round(teamOdds.impliedProbability * 100)}%
+                    </dd>
+                  </div>
                 )}
               </dl>
             </div>

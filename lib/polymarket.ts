@@ -1,5 +1,5 @@
 import { fetchWithRetry } from "./fetch-utils";
-import type { DriverOdds, H2HMarket, DriverPriceHistory, PricePoint } from "@/types";
+import type { DriverOdds, H2HMarket, DriverPriceHistory, PricePoint, TeamOdds, TeamPriceHistory } from "@/types";
 
 const BASE_URL = "https://gamma-api.polymarket.com";
 
@@ -44,6 +44,7 @@ interface PolymarketEventMarket {
   liquidity: string;
   volume: string;
   clobTokenIds?: string | string[];
+  groupItemTitle?: string;
 }
 
 interface PolymarketEvent {
@@ -336,4 +337,115 @@ export async function fetchAllRaceOdds(
     raceWinner: parseDriverOddsFromEvent(event),
     headToHeads: [],
   };
+}
+
+// ============================================================
+// Constructor Championship Market
+// ============================================================
+
+const CONSTRUCTOR_SLUG = "f1-constructors-champion";
+
+// Map Polymarket groupItemTitle → our teamId
+const TEAM_ID_MAP: Record<string, string> = {
+  "McLaren": "mclaren",
+  "Red Bull Racing": "red_bull",
+  "Williams": "williams",
+  "Aston Martin": "aston_martin",
+  "Audi": "sauber",
+  "Cadillac": "cadillac",
+  "Mercedes": "mercedes",
+  "Ferrari": "ferrari",
+  "Racing Bulls": "rb",
+  "Haas": "haas",
+  "Alpine": "alpine",
+};
+
+function lookupTeamId(polymarketName: string): string {
+  return TEAM_ID_MAP[polymarketName] ?? polymarketName.toLowerCase().replace(/\s+/g, "_");
+}
+
+/**
+ * Fetch current constructor championship odds from Polymarket.
+ */
+export async function fetchConstructorChampionshipOdds(): Promise<TeamOdds[]> {
+  const events = await fetchWithRetry<PolymarketEvent[]>(
+    `${BASE_URL}/events?slug=${CONSTRUCTOR_SLUG}`
+  );
+
+  if (!Array.isArray(events) || events.length === 0) return [];
+  const event = events[0];
+
+  return event.markets
+    .map((market) => {
+      if (market.slug.includes("-other-")) return null;
+
+      const teamName = market.groupItemTitle ?? "";
+      if (!teamName) return null;
+
+      const prices = parsePrices(market.outcomePrices);
+      const yesPrice = prices[0] ?? 0;
+      if (yesPrice <= 0 || isNaN(yesPrice)) return null;
+
+      return {
+        teamName,
+        teamId: lookupTeamId(teamName),
+        impliedProbability: yesPrice,
+      };
+    })
+    .filter((t): t is TeamOdds => t !== null)
+    .sort((a, b) => b.impliedProbability - a.impliedProbability);
+}
+
+/**
+ * Fetch constructor championship price history for the top N teams.
+ */
+export async function fetchConstructorChampionshipHistory(
+  topN = 5
+): Promise<TeamPriceHistory[]> {
+  const events = await fetchWithRetry<PolymarketEvent[]>(
+    `${BASE_URL}/events?slug=${CONSTRUCTOR_SLUG}`
+  );
+
+  if (!Array.isArray(events) || events.length === 0) return [];
+  const event = events[0];
+
+  const allMarkets = event.markets
+    .map((market) => {
+      if (market.slug.includes("-other-")) return null;
+
+      const teamName = market.groupItemTitle ?? "";
+      if (!teamName) return null;
+
+      const prices = parsePrices(market.outcomePrices);
+      const yesPrice = prices[0] ?? 0;
+      const tokenIds = parseClobTokenIds(market.clobTokenIds);
+      const yesTokenId = tokenIds[0];
+
+      if (!yesTokenId) return null;
+
+      return { teamName, teamId: lookupTeamId(teamName), yesPrice, yesTokenId };
+    })
+    .filter((m): m is NonNullable<typeof m> => m !== null)
+    .sort((a, b) => b.yesPrice - a.yesPrice)
+    .slice(0, topN);
+
+  const results = await Promise.all(
+    allMarkets.map(async (market) => {
+      try {
+        const history = await fetchPriceHistory(market.yesTokenId);
+        return {
+          teamName: market.teamName,
+          teamId: market.teamId,
+          currentProbability: market.yesPrice,
+          history,
+        };
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return results
+    .filter((r): r is TeamPriceHistory => r !== null && r.history.length > 0)
+    .sort((a, b) => b.currentProbability - a.currentProbability);
 }

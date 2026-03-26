@@ -261,6 +261,19 @@ export interface DriverPriceHistory {
   history: PricePoint[];
 }
 
+export interface TeamOdds {
+  teamName: string;
+  teamId: string;
+  impliedProbability: number;
+}
+
+export interface TeamPriceHistory {
+  teamName: string;
+  teamId: string;
+  currentProbability: number;
+  history: PricePoint[];
+}
+
 // ============================================================
 // Generated Briefing (Claude output)
 // ============================================================
