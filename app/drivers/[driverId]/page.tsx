@@ -27,7 +27,7 @@ async function getCachedStandings() {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchDriverStandings().catch(() => []);
+  return fetchDriverStandings();
 }
 
 async function getCachedSeasonResults(driverId: string) {
@@ -35,7 +35,7 @@ async function getCachedSeasonResults(driverId: string) {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchDriverSeasonResults(driverId).catch(() => []);
+  return fetchDriverSeasonResults(driverId);
 }
 
 async function getCachedBriefings() {
@@ -150,8 +150,8 @@ export default async function DriverPage({
   }
 
   const [standings, seasonResults, allBriefings] = await Promise.all([
-    getCachedStandings(),
-    getCachedSeasonResults(driverId),
+    getCachedStandings().catch(() => []),
+    getCachedSeasonResults(driverId).catch(() => []),
     getCachedBriefings(),
   ]);
 

@@ -21,7 +21,7 @@ async function getCachedCircuitHistory(circuitId: string) {
   cacheLife("max");
   cacheTag("briefing");
 
-  return fetchCircuitHistory(circuitId, 10).catch(() => []);
+  return fetchCircuitHistory(circuitId, 10);
 }
 
 async function getCachedCircuitInfo(circuitId: string) {
@@ -29,7 +29,7 @@ async function getCachedCircuitInfo(circuitId: string) {
   cacheLife("max");
   cacheTag("briefing");
 
-  return fetchCircuitInfo(circuitId).catch(() => null);
+  return fetchCircuitInfo(circuitId);
 }
 
 async function getCachedBriefings() {
@@ -139,8 +139,8 @@ export default async function CircuitPage({
   }
 
   const [circuitInfo, history, allBriefings] = await Promise.all([
-    getCachedCircuitInfo(circuitId),
-    getCachedCircuitHistory(circuitId),
+    getCachedCircuitInfo(circuitId).catch(() => null),
+    getCachedCircuitHistory(circuitId).catch(() => []),
     getCachedBriefings(),
   ]);
 

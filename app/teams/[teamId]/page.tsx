@@ -25,7 +25,7 @@ async function getCachedConstructorStandings() {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchConstructorStandings().catch(() => []);
+  return fetchConstructorStandings();
 }
 
 async function getCachedConstructorResults(constructorId: string) {
@@ -33,7 +33,7 @@ async function getCachedConstructorResults(constructorId: string) {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchConstructorSeasonResults(constructorId).catch(() => []);
+  return fetchConstructorSeasonResults(constructorId);
 }
 
 // ---------------------------------------------------------------------------
@@ -141,8 +141,8 @@ export default async function TeamPage({
   }
 
   const [standings, seasonResults] = await Promise.all([
-    getCachedConstructorStandings(),
-    getCachedConstructorResults(teamId),
+    getCachedConstructorStandings().catch(() => []),
+    getCachedConstructorResults(teamId).catch(() => []),
   ]);
 
   const standing = standings.find((s) => s.constructorId === teamId) ?? null;
