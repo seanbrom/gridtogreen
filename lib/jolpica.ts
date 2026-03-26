@@ -6,7 +6,7 @@ import type {
   HistoricalRaceResult,
 } from "@/types";
 
-const BASE_URL = "http://api.jolpi.ca/ergast/f1";
+const BASE_URL = "https://api.jolpi.ca/ergast/f1";
 
 // eslint-disable-next-line @typescript-eslint/no-explicit-any
 function parseDriverStanding(raw: any): DriverStanding {
