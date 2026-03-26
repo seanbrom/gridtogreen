@@ -11,11 +11,11 @@ import { ConstructorOddsChart } from "@/components/ConstructorOddsChart";
 export const metadata: Metadata = {
   title: "F1 Teams",
   description:
-    "Every constructor on the 2026 Formula 1 grid. Championship standings, driver lineups, points, wins, and season stats for all 11 teams.",
+    "Every constructor on the 2026 Formula 1 grid. Championship standings, Polymarket WCC odds, driver lineups, and season stats for all 11 teams.",
   openGraph: {
     title: "F1 Teams | Grid to Green",
     description:
-      "Constructor standings and team profiles for the 2026 F1 season.",
+      "Constructor standings, prediction market odds, and team profiles for the 2026 F1 season.",
   },
 };
 

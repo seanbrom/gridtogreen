@@ -10,11 +10,11 @@ import { ChampionshipOddsChart } from "@/components/ChampionshipOddsChart";
 export const metadata: Metadata = {
   title: "F1 Drivers",
   description:
-    "Every driver on the 2026 Formula 1 grid. Season stats, championship standings, race results, and pre-race briefings for all 22 drivers.",
+    "Every driver on the 2026 Formula 1 grid. Championship standings, Polymarket WDC odds, race results, and season stats for all 22 drivers.",
   openGraph: {
     title: "F1 Drivers | Grid to Green",
     description:
-      "Stats and standings for every driver on the 2026 F1 grid.",
+      "Championship standings, prediction market odds, and season stats for every driver on the 2026 F1 grid.",
   },
 };
 

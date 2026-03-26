@@ -35,6 +35,14 @@ export const metadata: Metadata = {
     title: "Grid to Green",
     description: "One briefing per race. Four data sources. An actual opinion.",
     type: "website",
+    images: [
+      {
+        url: "/og-image.png",
+        width: 1200,
+        height: 630,
+        alt: "Grid to Green: AI-powered F1 race briefings",
+      },
+    ],
   },
   twitter: {
     card: "summary_large_image",

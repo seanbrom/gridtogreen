@@ -137,10 +137,10 @@ export async function generateMetadata({
 
   return {
     title: `${meta.name} | F1 Team Profile`,
-    description: `${meta.fullName} 2026 season stats, constructor championship standing, driver lineup, and race results. Based in ${meta.base}, ${meta.country}.`,
+    description: `${meta.fullName} 2026 season stats, Polymarket WCC championship odds, constructor standing, driver lineup, and race results. Based in ${meta.base}, ${meta.country}.`,
     openGraph: {
       title: `${meta.name} | Team Profile | Grid to Green`,
-      description: `Season stats and race results for ${meta.fullName}.`,
+      description: `Season stats, prediction market odds, and race results for ${meta.fullName}.`,
     },
   };
 }
