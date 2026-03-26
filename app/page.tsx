@@ -43,9 +43,9 @@ async function getPageData() {
         new Date(a.raceDate).getTime() - new Date(b.raceDate).getTime()
     );
 
-  // Latest full briefing (not a preview)
+  // Latest full briefing (not a preview or cancelled)
   const latestFull =
-    briefing && briefing.briefingType !== "preview" ? briefing : null;
+    briefing && briefing.briefingType !== "preview" && briefing.briefingType !== "cancelled" ? briefing : null;
 
   return { briefing: latestFull, pastBriefings, previewBriefings };
 }

@@ -181,7 +181,23 @@ export default async function BriefingPage({
         ]}
       />
       <BriefingHero briefing={briefing} />
-      <RaceCountdown raceDate={briefing.raceDate} raceStartTime={briefing.raceStartTime} />
+      {briefing.briefingType !== "cancelled" && (
+        <RaceCountdown raceDate={briefing.raceDate} raceStartTime={briefing.raceStartTime} />
+      )}
+
+      {briefing.briefingType === "cancelled" && (
+        <div className="mx-auto max-w-7xl px-4 pt-6">
+          <div className="flex items-center gap-3 rounded-lg border border-muted-foreground/20 bg-muted-foreground/5 px-5 py-3">
+            <p className="text-sm text-muted-foreground">
+              <span className="font-medium text-foreground">
+                Race cancelled
+              </span>{" "}
+              &mdash; this Grand Prix has been removed from the 2026 calendar.
+              The briefing below was generated before the cancellation was announced.
+            </p>
+          </div>
+        </div>
+      )}
 
       {briefing.briefingType === "preview" && (
         <div className="mx-auto max-w-7xl px-4 pt-6">
@@ -191,7 +207,7 @@ export default async function BriefingPage({
               <span className="font-medium text-foreground">
                 Preview briefing
               </span>{" "}
-              — this will be updated with qualifying data and weather after
+              &mdash; this will be updated with qualifying data and weather after
               Saturday&apos;s session.
             </p>
           </div>

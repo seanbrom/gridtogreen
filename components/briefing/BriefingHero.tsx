@@ -25,10 +25,16 @@ export function BriefingHero({ briefing }: BriefingHeroProps) {
       <div className="relative mx-auto max-w-7xl px-4 pb-8 pt-12 md:pt-16">
         {/* Race info bar */}
         <div className="flex items-center gap-3 text-sm text-muted-foreground">
-          <span className="inline-flex items-center gap-1.5 rounded bg-racing-red/10 px-3 py-1 text-xs font-medium text-racing-red">
-            <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-racing-red" />
-            {briefing.briefingType === "preview" ? "PREVIEW" : "RACE BRIEFING"}
-          </span>
+          {briefing.briefingType === "cancelled" ? (
+            <span className="inline-flex items-center gap-1.5 rounded bg-muted-foreground/10 px-3 py-1 text-xs font-medium text-muted-foreground">
+              CANCELLED
+            </span>
+          ) : (
+            <span className="inline-flex items-center gap-1.5 rounded bg-racing-red/10 px-3 py-1 text-xs font-medium text-racing-red">
+              <span className="h-1.5 w-1.5 animate-pulse rounded-full bg-racing-red" />
+              {briefing.briefingType === "preview" ? "PREVIEW" : "RACE BRIEFING"}
+            </span>
+          )}
           {circuitId ? (
             <Link href={`/circuits/${circuitId}`} className="font-mono text-xs transition-colors hover:text-foreground">
               {briefing.circuit}

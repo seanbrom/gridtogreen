@@ -322,7 +322,7 @@ export interface Briefing {
   qualifying: BriefingContext["qualifying"];
   weather: BriefingContext["weather"] | null;
   polymarketSlug?: string;
-  briefingType?: "preview" | "full";
+  briefingType?: "preview" | "full" | "cancelled";
   raceStartTime?: string;
 }
 
@@ -338,5 +338,5 @@ export interface BriefingMeta {
     value: string;
     label: string;
   };
-  briefingType?: "preview" | "full";
+  briefingType?: "preview" | "full" | "cancelled";
 }
