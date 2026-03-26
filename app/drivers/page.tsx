@@ -21,11 +21,11 @@ async function getCachedStandings() {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchDriverStandings();
+  return fetchDriverStandings().catch(() => []);
 }
 
 export default async function DriversPage() {
-  const standings = await getCachedStandings().catch(() => []);
+  const standings = await getCachedStandings();
   const standingsMap = new Map(standings.map((s) => [s.driverId, s]));
 
   return (

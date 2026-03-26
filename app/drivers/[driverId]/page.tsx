@@ -27,7 +27,7 @@ async function getCachedStandings() {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchDriverStandings();
+  return fetchDriverStandings().catch(() => []);
 }
 
 async function getCachedSeasonResults(driverId: string) {
@@ -35,7 +35,7 @@ async function getCachedSeasonResults(driverId: string) {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchDriverSeasonResults(driverId);
+  return fetchDriverSeasonResults(driverId).catch(() => []);
 }
 
 async function getCachedBriefings() {
@@ -106,7 +106,7 @@ function findRelatedBriefings(
 // ---------------------------------------------------------------------------
 
 export function generateStaticParams() {
-  return DRIVERS.map((d) => ({ driverId: d.driverId }));
+  return [{ driverId: DRIVERS[0].driverId }];
 }
 
 export async function generateMetadata({
@@ -150,8 +150,8 @@ export default async function DriverPage({
   }
 
   const [standings, seasonResults, allBriefings] = await Promise.all([
-    getCachedStandings().catch(() => []),
-    getCachedSeasonResults(driverId).catch(() => []),
+    getCachedStandings(),
+    getCachedSeasonResults(driverId),
     getCachedBriefings(),
   ]);
 

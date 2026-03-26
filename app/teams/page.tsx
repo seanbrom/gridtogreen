@@ -22,11 +22,11 @@ async function getCachedStandings() {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchConstructorStandings();
+  return fetchConstructorStandings().catch(() => []);
 }
 
 export default async function TeamsPage() {
-  const standings = await getCachedStandings().catch(() => []);
+  const standings = await getCachedStandings();
   const standingsMap = new Map(standings.map((s) => [s.constructorId, s]));
 
   // Sort teams by championship position, unranked at the end

@@ -25,7 +25,7 @@ async function getCachedConstructorStandings() {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchConstructorStandings();
+  return fetchConstructorStandings().catch(() => []);
 }
 
 async function getCachedConstructorResults(constructorId: string) {
@@ -33,7 +33,7 @@ async function getCachedConstructorResults(constructorId: string) {
   cacheLife("hours");
   cacheTag("briefing");
 
-  return fetchConstructorSeasonResults(constructorId);
+  return fetchConstructorSeasonResults(constructorId).catch(() => []);
 }
 
 // ---------------------------------------------------------------------------
@@ -99,7 +99,7 @@ function computeDriverSplits(results: ConstructorSeasonResult[]) {
 // ---------------------------------------------------------------------------
 
 export function generateStaticParams() {
-  return TEAMS_META.map((t) => ({ teamId: t.teamId }));
+  return [{ teamId: TEAMS_META[0].teamId }];
 }
 
 export async function generateMetadata({
@@ -141,8 +141,8 @@ export default async function TeamPage({
   }
 
   const [standings, seasonResults] = await Promise.all([
-    getCachedConstructorStandings().catch(() => []),
-    getCachedConstructorResults(teamId).catch(() => []),
+    getCachedConstructorStandings(),
+    getCachedConstructorResults(teamId),
   ]);
 
   const standing = standings.find((s) => s.constructorId === teamId) ?? null;

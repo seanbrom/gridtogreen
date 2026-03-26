@@ -21,7 +21,7 @@ async function getCachedCircuitHistory(circuitId: string) {
   cacheLife("max");
   cacheTag("briefing");
 
-  return fetchCircuitHistory(circuitId, 10);
+  return fetchCircuitHistory(circuitId, 10).catch(() => []);
 }
 
 async function getCachedCircuitInfo(circuitId: string) {
@@ -29,7 +29,7 @@ async function getCachedCircuitInfo(circuitId: string) {
   cacheLife("max");
   cacheTag("briefing");
 
-  return fetchCircuitInfo(circuitId);
+  return fetchCircuitInfo(circuitId).catch(() => null);
 }
 
 async function getCachedBriefings() {
@@ -96,8 +96,10 @@ function findRelatedBriefings(
 // Static params & metadata
 // ---------------------------------------------------------------------------
 
+// Return a single entry to satisfy Next.js cache validation.
+// Remaining pages render on-demand (avoids hammering Jolpica at build time).
 export function generateStaticParams() {
-  return CIRCUITS.map((c) => ({ circuitId: c.circuitId }));
+  return [{ circuitId: CIRCUITS[0].circuitId }];
 }
 
 export async function generateMetadata({
@@ -139,8 +141,8 @@ export default async function CircuitPage({
   }
 
   const [circuitInfo, history, allBriefings] = await Promise.all([
-    getCachedCircuitInfo(circuitId).catch(() => null),
-    getCachedCircuitHistory(circuitId).catch(() => []),
+    getCachedCircuitInfo(circuitId),
+    getCachedCircuitHistory(circuitId),
     getCachedBriefings(),
   ]);
 
