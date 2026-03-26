@@ -29,13 +29,13 @@ export function HeroTitle() {
 
       {/* Explainer text */}
       <p className="mt-5 max-w-xl text-sm leading-relaxed text-muted-foreground md:text-base">
-        The pre-race read for anyone who wants more than gut feelings.{" "}
-        <span className="text-foreground">Prediction markets</span>,{" "}
-        <span className="text-foreground">telemetry</span>,{" "}
-        <span className="text-foreground">five years of circuit data</span>,
+        Prediction markets price F1 races on narratives. You can price them
+        on data. Every GP, we synthesize{" "}
+        <span className="text-foreground">qualifying telemetry</span>,{" "}
+        <span className="text-foreground">five years of circuit history</span>,
         and{" "}
-        <span className="text-foreground">weather</span>.
-        Synthesized into a briefing that takes a side.
+        <span className="text-foreground">race day weather</span>{" "}
+        into one opinionated briefing that finds the edges the market misses.
       </p>
     </div>
   );

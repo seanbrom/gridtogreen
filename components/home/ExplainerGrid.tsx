@@ -52,17 +52,17 @@ export function ExplainerGrid() {
           <div className="absolute inset-x-0 top-0 h-0.5 bg-gradient-to-r from-racing-red/60 to-racing-red/0" />
 
           {/* Terminal header */}
-          <div className="flex items-center justify-between">
-            <span className="font-mono text-[9px] uppercase tracking-widest text-muted-foreground/50 md:text-[10px]">
+          <div className="flex items-start justify-between gap-1">
+            <span className="min-w-0 truncate font-mono text-[9px] uppercase tracking-widest text-muted-foreground/50 md:text-[10px]">
               <span className="text-racing-red/50">SYS</span>:{panel.sys}
             </span>
             {panel.live ? (
-              <span className="inline-flex items-center gap-1 rounded-full bg-racing-red/10 px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider text-racing-red md:gap-1.5 md:px-2 md:text-[9px]">
+              <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-racing-red/10 px-1.5 py-0.5 text-[8px] font-medium uppercase tracking-wider text-racing-red md:gap-1.5 md:px-2 md:text-[9px]">
                 <span className="h-1 w-1 animate-pulse rounded-full bg-racing-red md:h-1.5 md:w-1.5" />
                 LIVE
               </span>
             ) : (
-              <span className="font-mono text-[9px] tabular-nums text-muted-foreground/40 md:text-[10px]">
+              <span className="shrink-0 font-mono text-[9px] tabular-nums text-muted-foreground/40 md:text-[10px]">
                 {panel.stat}
               </span>
             )}
