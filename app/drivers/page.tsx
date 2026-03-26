@@ -3,12 +3,14 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { DRIVERS, TEAMS } from "@/lib/drivers";
 import { fetchDriverStandings } from "@/lib/jolpica";
+import { fetchWdcChampionshipHistory } from "@/lib/polymarket";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
+import { ChampionshipOddsChart } from "@/components/ChampionshipOddsChart";
 
 export const metadata: Metadata = {
   title: "F1 Drivers",
   description:
-    "Every driver on the 2026 Formula 1 grid. Season stats, championship standings, race results, and pre-race briefings for all 20 drivers.",
+    "Every driver on the 2026 Formula 1 grid. Season stats, championship standings, race results, and pre-race briefings for all 22 drivers.",
   openGraph: {
     title: "F1 Drivers | Grid to Green",
     description:
@@ -24,9 +26,21 @@ async function getCachedStandings() {
   return fetchDriverStandings().catch(() => []);
 }
 
+async function getCachedWdcHistory() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("briefing");
+
+  return fetchWdcChampionshipHistory(5).catch(() => []);
+}
+
 export default async function DriversPage() {
-  const standings = await getCachedStandings();
+  const [standings, oddsHistory] = await Promise.all([
+    getCachedStandings(),
+    getCachedWdcHistory(),
+  ]);
   const standingsMap = new Map(standings.map((s) => [s.driverId, s]));
+  const oddsMap = new Map(oddsHistory.map((o) => [o.driverCode, o]));
 
   return (
     <>
@@ -61,6 +75,13 @@ export default async function DriversPage() {
         <div className="mt-4 h-0.5 w-20 bg-racing-red" />
       </header>
 
+      {/* WDC championship odds chart */}
+      {oddsHistory.length > 0 && (
+        <div className="mx-auto max-w-7xl px-4 pb-8">
+          <ChampionshipOddsChart oddsHistory={oddsHistory} />
+        </div>
+      )}
+
       {/* Drivers by team */}
       <div className="mx-auto max-w-7xl px-4 pb-16">
         <div className="space-y-8">
@@ -81,6 +102,7 @@ export default async function DriversPage() {
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
                   {teamDrivers.map((driver) => {
                     const s = standingsMap.get(driver.driverId);
+                    const odds = oddsMap.get(driver.code);
 
                     return (
                       <Link
@@ -107,21 +129,28 @@ export default async function DriversPage() {
                           </span>
                         </div>
 
-                        {s && (
-                          <div className="mt-3 flex items-baseline gap-4 border-t border-border/30 pt-3">
-                            <span className="font-heading text-2xl text-foreground">
-                              P{s.position}
-                            </span>
-                            <span className="font-mono text-xs text-muted-foreground">
-                              {s.points} pts
-                            </span>
-                            {s.wins > 0 && (
-                              <span className="font-mono text-xs text-terminal-green">
-                                {s.wins} win{s.wins === 1 ? "" : "s"}
+                        <div className="mt-3 flex items-baseline gap-4 border-t border-border/30 pt-3">
+                          {s && (
+                            <>
+                              <span className="font-heading text-2xl text-foreground">
+                                P{s.position}
                               </span>
-                            )}
-                          </div>
-                        )}
+                              <span className="font-mono text-xs text-muted-foreground">
+                                {s.points} pts
+                              </span>
+                              {s.wins > 0 && (
+                                <span className="font-mono text-xs text-terminal-green">
+                                  {s.wins} win{s.wins === 1 ? "" : "s"}
+                                </span>
+                              )}
+                            </>
+                          )}
+                          {odds && (
+                            <span className="font-mono text-xs text-terminal-amber">
+                              {Math.round(odds.currentProbability * 100)}% WDC
+                            </span>
+                          )}
+                        </div>
                       </Link>
                     );
                   })}

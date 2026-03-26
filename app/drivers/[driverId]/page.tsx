@@ -10,9 +10,14 @@ import {
 } from "@/lib/jolpica";
 import { getAllBriefings } from "@/lib/kv";
 import { getCircuitMeta } from "@/lib/circuits";
+import {
+  fetchWdcChampionshipOdds,
+  fetchWdcChampionshipHistory,
+} from "@/lib/polymarket";
 import { isFinished, positionColor } from "@/lib/race-utils";
 import { ArchiveCard } from "@/components/ArchiveCard";
 import { Breadcrumbs, breadcrumbJsonLd } from "@/components/Breadcrumbs";
+import { ChampionshipOddsChart } from "@/components/ChampionshipOddsChart";
 import { PointsBar } from "@/components/PointsBar";
 import { SectionHeading } from "@/components/SectionHeading";
 import { StatCard } from "@/components/StatCard";
@@ -36,6 +41,22 @@ async function getCachedSeasonResults(driverId: string) {
   cacheTag("briefing");
 
   return fetchDriverSeasonResults(driverId).catch(() => []);
+}
+
+async function getCachedWdcOdds() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("briefing");
+
+  return fetchWdcChampionshipOdds().catch(() => []);
+}
+
+async function getCachedWdcHistory() {
+  "use cache";
+  cacheLife("hours");
+  cacheTag("briefing");
+
+  return fetchWdcChampionshipHistory(5).catch(() => []);
 }
 
 async function getCachedBriefings() {
@@ -149,13 +170,17 @@ export default async function DriverPage({
     notFound();
   }
 
-  const [standings, seasonResults, allBriefings] = await Promise.all([
-    getCachedStandings(),
-    getCachedSeasonResults(driverId),
-    getCachedBriefings(),
-  ]);
+  const [standings, seasonResults, allBriefings, allWdcOdds, wdcHistory] =
+    await Promise.all([
+      getCachedStandings(),
+      getCachedSeasonResults(driverId),
+      getCachedBriefings(),
+      getCachedWdcOdds(),
+      getCachedWdcHistory(),
+    ]);
 
   const standing = standings.find((s) => s.driverId === driverId) ?? null;
+  const wdcOdds = allWdcOdds.find((o) => o.driverCode === meta.code) ?? null;
   const stats = computeDriverStats(seasonResults);
   const relatedBriefings = findRelatedBriefings(allBriefings, meta.code);
 
@@ -230,6 +255,11 @@ export default async function DriverPage({
               P{standing.position} in championship &middot; {standing.points} pts
             </span>
           )}
+          {wdcOdds && (
+            <span className="font-mono text-sm text-terminal-amber">
+              {Math.round(wdcOdds.impliedProbability * 100)}% WDC odds
+            </span>
+          )}
         </div>
         <div className="mt-4 h-0.5 w-20 bg-racing-red" />
       </header>
@@ -257,6 +287,10 @@ export default async function DriverPage({
         <div className="grid grid-cols-1 gap-8 lg:grid-cols-3">
           {/* Main content */}
           <div className="space-y-8 lg:col-span-2">
+            {wdcHistory.length > 0 && (
+              <ChampionshipOddsChart oddsHistory={wdcHistory} />
+            )}
+
             {/* Season results table */}
             {seasonResults.length > 0 && (
               <section>
@@ -455,6 +489,14 @@ export default async function DriverPage({
                       </dd>
                     </div>
                   </>
+                )}
+                {wdcOdds && (
+                  <div className="flex justify-between">
+                    <dt className="text-muted-foreground">WDC odds</dt>
+                    <dd className="font-mono text-terminal-amber">
+                      {Math.round(wdcOdds.impliedProbability * 100)}%
+                    </dd>
+                  </div>
                 )}
               </dl>
             </div>

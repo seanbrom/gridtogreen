@@ -449,3 +449,96 @@ export async function fetchConstructorChampionshipHistory(
     .filter((r): r is TeamPriceHistory => r !== null && r.history.length > 0)
     .sort((a, b) => b.currentProbability - a.currentProbability);
 }
+
+// ============================================================
+// Drivers' Championship Market
+// ============================================================
+
+const WDC_SLUG = "2026-f1-drivers-champion";
+
+/**
+ * Fetch current WDC championship odds from Polymarket.
+ * Reuses the existing DriverOdds type (driverName, driverCode, impliedProbability).
+ */
+export async function fetchWdcChampionshipOdds(): Promise<DriverOdds[]> {
+  const events = await fetchWithRetry<PolymarketEvent[]>(
+    `${BASE_URL}/events?slug=${WDC_SLUG}`
+  );
+
+  if (!Array.isArray(events) || events.length === 0) return [];
+  const event = events[0];
+
+  return event.markets
+    .map((market) => {
+      if (market.slug.includes("-other-")) return null;
+      const name = market.groupItemTitle ?? "";
+      if (!name || name.startsWith("Driver ")) return null;
+
+      const driverCode = lookupDriverCode(name);
+      const prices = parsePrices(market.outcomePrices);
+      const yesPrice = prices[0] ?? 0;
+      if (yesPrice <= 0 || isNaN(yesPrice)) return null;
+
+      return {
+        driverName: name,
+        driverCode,
+        impliedProbability: yesPrice,
+        price: yesPrice,
+      };
+    })
+    .filter((d): d is DriverOdds => d !== null)
+    .sort((a, b) => b.impliedProbability - a.impliedProbability);
+}
+
+/**
+ * Fetch WDC championship price history for the top N drivers.
+ */
+export async function fetchWdcChampionshipHistory(
+  topN = 5
+): Promise<DriverPriceHistory[]> {
+  const events = await fetchWithRetry<PolymarketEvent[]>(
+    `${BASE_URL}/events?slug=${WDC_SLUG}`
+  );
+
+  if (!Array.isArray(events) || events.length === 0) return [];
+  const event = events[0];
+
+  const allMarkets = event.markets
+    .map((market) => {
+      if (market.slug.includes("-other-")) return null;
+      const name = market.groupItemTitle ?? "";
+      if (!name || name.startsWith("Driver ")) return null;
+
+      const driverCode = lookupDriverCode(name);
+      const prices = parsePrices(market.outcomePrices);
+      const yesPrice = prices[0] ?? 0;
+      const tokenIds = parseClobTokenIds(market.clobTokenIds);
+      const yesTokenId = tokenIds[0];
+      if (!yesTokenId) return null;
+
+      return { driverName: name, driverCode, yesPrice, yesTokenId };
+    })
+    .filter((m): m is NonNullable<typeof m> => m !== null)
+    .sort((a, b) => b.yesPrice - a.yesPrice)
+    .slice(0, topN);
+
+  const results = await Promise.all(
+    allMarkets.map(async (market) => {
+      try {
+        const history = await fetchPriceHistory(market.yesTokenId);
+        return {
+          driverName: market.driverName,
+          driverCode: market.driverCode,
+          currentProbability: market.yesPrice,
+          history,
+        };
+      } catch {
+        return null;
+      }
+    })
+  );
+
+  return results
+    .filter((r): r is DriverPriceHistory => r !== null && r.history.length > 0)
+    .sort((a, b) => b.currentProbability - a.currentProbability);
+}
