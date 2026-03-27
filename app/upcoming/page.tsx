@@ -14,11 +14,13 @@ async function getUpcomingData() {
   cacheTag("briefing");
 
   const now = new Date();
+  // Keep showing current GP preview for 1 day after race day
+  const oneDayMs = 24 * 60 * 60 * 1000;
   const all = await getAllBriefings();
   return all
     .filter(
       (b) =>
-        b.briefingType === "preview" && new Date(b.raceDate) > now
+        b.briefingType === "preview" && new Date(b.raceDate).getTime() + oneDayMs > now.getTime()
     )
     .sort(
       (a, b) =>
