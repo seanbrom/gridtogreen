@@ -22,7 +22,7 @@ import { QualifyingGrid } from "@/components/briefing/QualifyingGrid";
 
 async function getPageData() {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours"); // Changed from "max" to refresh regularly
   cacheTag("briefing");
 
   const [briefing, allBriefings] = await Promise.all([
@@ -67,6 +67,7 @@ async function getUpcomingPreview() {
       (a, b) =>
         new Date(a.raceDate).getTime() - new Date(b.raceDate).getTime()
     )[0];
+  
   if (!nextPreview) return null;
   return getBriefing(nextPreview.slug);
 }
