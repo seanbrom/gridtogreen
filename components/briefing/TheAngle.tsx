@@ -25,7 +25,7 @@ export function TheAngle({ content, polymarketUrl }: TheAngleProps) {
             href={polymarketUrl}
             target="_blank"
             rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 rounded-lg border border-racing-red/40 bg-racing-red/10 px-5 py-2.5 text-sm font-medium text-racing-red transition-colors hover:bg-racing-red/20"
+            className="inline-flex items-center gap-2 rounded-lg border border-terminal-green/40 bg-terminal-green/10 px-5 py-2.5 text-sm font-medium text-terminal-green transition-colors hover:bg-terminal-green/20"
           >
             Trade this race on Polymarket
             <svg
