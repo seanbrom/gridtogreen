@@ -22,7 +22,7 @@ import { QualifyingGrid } from "@/components/briefing/QualifyingGrid";
 
 async function getPageData() {
   "use cache";
-  cacheLife("max");
+  cacheLife("hours"); // Changed from "max" to refresh regularly
   cacheTag("briefing");
 
   const [briefing, allBriefings] = await Promise.all([
@@ -31,12 +31,14 @@ async function getPageData() {
   ]);
 
   const now = new Date();
+  // Keep showing current GP briefings for 1 day after race day
+  const oneDayMs = 24 * 60 * 60 * 1000;
   const pastBriefings = allBriefings.filter(
-    (b) => b.briefingType !== "preview" || new Date(b.raceDate) <= now
+    (b) => b.briefingType !== "preview" || new Date(b.raceDate).getTime() + oneDayMs <= now.getTime()
   );
   const previewBriefings = allBriefings
     .filter(
-      (b) => b.briefingType === "preview" && new Date(b.raceDate) > now
+      (b) => b.briefingType === "preview" && new Date(b.raceDate).getTime() + oneDayMs > now.getTime()
     )
     .sort(
       (a, b) =>
@@ -57,12 +59,15 @@ async function getUpcomingPreview() {
 
   const all = await getAllBriefings();
   const now = new Date();
+  // Keep showing current GP preview for 1 day after race day
+  const oneDayMs = 24 * 60 * 60 * 1000;
   const nextPreview = all
-    .filter((b) => b.briefingType === "preview" && new Date(b.raceDate) > now)
+    .filter((b) => b.briefingType === "preview" && new Date(b.raceDate).getTime() + oneDayMs > now.getTime())
     .sort(
       (a, b) =>
         new Date(a.raceDate).getTime() - new Date(b.raceDate).getTime()
     )[0];
+  
   if (!nextPreview) return null;
   return getBriefing(nextPreview.slug);
 }

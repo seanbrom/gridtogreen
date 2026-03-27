@@ -18,17 +18,22 @@ export async function fetchAllMeetings(
 }
 
 export async function fetchNextMeeting(): Promise<OpenF1Meeting | null> {
-  const now = new Date().toISOString();
-  const year = new Date().getFullYear();
+  const now = new Date();
+  const year = now.getFullYear();
 
   // Try current year first
   const meetings = await fetchWithRetry<OpenF1Meeting[]>(
     `${BASE_URL}/meetings?year=${year}`
   );
 
-  // Find the next upcoming meeting, or the most recent one if mid-weekend
+  // Find the current or upcoming meeting
+  // Keep showing current GP for 1 day after it ends to allow post-race briefings
   const upcoming = meetings
-    .filter((m) => m.date_end >= now)
+    .filter((m) => {
+      const endDate = new Date(m.date_end);
+      const endPlusOneDay = new Date(endDate.getTime() + 24 * 60 * 60 * 1000);
+      return endPlusOneDay >= now;
+    })
     .sort(
       (a, b) =>
         new Date(a.date_start).getTime() - new Date(b.date_start).getTime()
