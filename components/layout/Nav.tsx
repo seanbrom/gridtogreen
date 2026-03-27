@@ -4,12 +4,12 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 
 const NAV_LINKS = [
-  { href: "/", label: "Latest" },
-  { href: "/upcoming", label: "Upcoming" },
-  { href: "/drivers", label: "Drivers" },
-  { href: "/teams", label: "Teams" },
-  { href: "/circuits", label: "Circuits" },
-  { href: "/archive", label: "Archive" },
+  { href: "/", label: "Latest", hideMobile: false },
+  { href: "/upcoming", label: "Upcoming", hideMobile: false },
+  { href: "/drivers", label: "Drivers", hideMobile: true },
+  { href: "/teams", label: "Teams", hideMobile: true },
+  { href: "/circuits", label: "Circuits", hideMobile: true },
+  { href: "/archive", label: "Archive", hideMobile: true },
 ];
 
 export function Nav() {
@@ -27,8 +27,8 @@ export function Nav() {
             GRID_TO_GREEN
           </span>
         </Link>
-        <nav className="flex items-center gap-6 text-sm">
-          {NAV_LINKS.map(({ href, label }) => {
+        <nav className="flex items-center gap-4 text-sm sm:gap-6">
+          {NAV_LINKS.map(({ href, label, hideMobile }) => {
             const isActive =
               href === "/"
                 ? pathname === "/"
@@ -39,9 +39,10 @@ export function Nav() {
                 key={href}
                 href={href}
                 className={
-                  isActive
+                  (hideMobile ? "hidden sm:block " : "") +
+                  (isActive
                     ? "relative text-foreground after:absolute after:-bottom-[17px] after:inset-x-0 after:h-0.5 after:bg-racing-red"
-                    : "text-muted-foreground transition-colors hover:text-foreground"
+                    : "text-muted-foreground transition-colors hover:text-foreground")
                 }
               >
                 {label}

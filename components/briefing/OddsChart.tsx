@@ -137,7 +137,7 @@ export function OddsChart({ oddsHistory }: OddsChartProps) {
         {!mounted ? (
           <div className="h-full w-full" />
         ) : (
-        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
+        <ResponsiveContainer width="100%" height="100%" minWidth={0} minHeight={0}>
           <LineChart data={data}>
             <CartesianGrid
               strokeDasharray="3 3"
