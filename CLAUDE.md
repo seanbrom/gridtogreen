@@ -11,6 +11,17 @@ AI-powered F1 race briefings that synthesize prediction market odds, qualifying 
 
 ## Conventions
 
+### Text Generation
+
+All text generation via Claude must follow these guidelines:
+
+- **Never use em dashes (—)** in any generated text. Replace em dashes with commas or separate sentences for clarity.
+- **Hyphens are only for compound words** like "pre-race", "head-to-head", or "post-qualifying". Do not use hyphens to replace em dashes mid-sentence.
+- Tone: confident, opinionated, slightly irreverent, never boring. Be an analyst who uses data to make arguments, not a stats reciter.
+- Every number cited should serve a point, not just fill space.
+
+These guidelines are enforced in the system prompts in `lib/claude.ts` (`SYSTEM_PROMPT` and `PREVIEW_SYSTEM_PROMPT`).
+
 ### Caching
 
 All data-fetching functions use the Next.js 16 `"use cache"` directive with explicit lifetime and tags:
