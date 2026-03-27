@@ -28,16 +28,25 @@ function calcTimeLeft(target: Date): TimeLeft | null {
 
 export function RaceCountdown({ raceDate, raceStartTime }: RaceCountdownProps) {
   const target = new Date(raceStartTime ?? raceDate);
-  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(() =>
-    calcTimeLeft(target)
-  );
+  const [timeLeft, setTimeLeft] = useState<TimeLeft | null>(null);
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
+    setMounted(true);
+    setTimeLeft(calcTimeLeft(target));
     const interval = setInterval(() => {
       setTimeLeft(calcTimeLeft(target));
     }, 1000);
     return () => clearInterval(interval);
   }, [raceDate]);
+
+  if (!mounted) {
+    return (
+      <div className="mx-auto max-w-7xl px-4 py-5">
+        <div className="h-[52px]" />
+      </div>
+    );
+  }
 
   if (!timeLeft) {
     return (

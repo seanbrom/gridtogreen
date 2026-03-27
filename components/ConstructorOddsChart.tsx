@@ -1,5 +1,6 @@
 "use client";
 
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   LineChart,
@@ -73,6 +74,9 @@ function formatTooltipDate(timestamp: number) {
 }
 
 export function ConstructorOddsChart({ oddsHistory }: ConstructorOddsChartProps) {
+  const [mounted, setMounted] = useState(false);
+  useEffect(() => setMounted(true), []);
+
   if (oddsHistory.length === 0) return null;
 
   const data = buildChartData(oddsHistory);
@@ -111,7 +115,10 @@ export function ConstructorOddsChart({ oddsHistory }: ConstructorOddsChartProps)
       </div>
 
       <div className="h-64 w-full md:h-80">
-        <ResponsiveContainer width="100%" height="100%">
+        {!mounted ? (
+          <div className="h-full w-full" />
+        ) : (
+        <ResponsiveContainer width="100%" height="100%" minWidth={0}>
           <LineChart data={data}>
             <CartesianGrid
               strokeDasharray="3 3"
@@ -162,6 +169,7 @@ export function ConstructorOddsChart({ oddsHistory }: ConstructorOddsChartProps)
             ))}
           </LineChart>
         </ResponsiveContainer>
+        )}
       </div>
     </div>
   );

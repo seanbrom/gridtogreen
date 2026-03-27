@@ -29,11 +29,11 @@ export const metadata: Metadata = {
     template: "%s | Grid to Green",
   },
   description:
-    "Opinionated F1 race briefings built from prediction market odds, qualifying telemetry, circuit history, and weather. Published before every Grand Prix.",
+    "Find the edges F1 prediction markets miss. Qualifying telemetry, circuit history, and weather synthesized into one opinionated briefing before every Grand Prix.",
   metadataBase: new URL(getBaseUrl()),
   openGraph: {
     title: "Grid to Green",
-    description: "One briefing per race. Four data sources. An actual opinion.",
+    description: "Beat F1 prediction markets with data, not narratives. One briefing per race.",
     type: "website",
     images: [
       {
@@ -55,7 +55,7 @@ const websiteJsonLd = JSON.stringify({
   name: "Grid to Green",
   url: getBaseUrl(),
   description:
-    "Opinionated F1 race briefings built from prediction market odds, qualifying telemetry, circuit history, and weather. Published before every Grand Prix.",
+    "Find the edges F1 prediction markets miss. Qualifying telemetry, circuit history, and weather synthesized into one opinionated briefing before every Grand Prix.",
 });
 
 export default function RootLayout({
