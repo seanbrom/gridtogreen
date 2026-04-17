@@ -10,7 +10,7 @@ interface ShareCardProps {
 export function ShareCard({ slug, headline }: ShareCardProps) {
   const [copied, setCopied] = useState(false);
 
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gridtogreen.com";
+  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL ?? "https://gridtogreen.club";
   const url = `${baseUrl}/briefings/${slug}`;
 
   async function handleCopyLink() {
